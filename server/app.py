@@ -11,11 +11,11 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, HTMLResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from server.config import ServerSettings
-from server.ledger import Ledger, generate_key_b64, seed_demo_data
+from server.ledger import COOKIE_NAME, Ledger, WorkspaceManager, generate_key_b64, seed_demo_data
 from server.nlu.groq_nlu import GroqIntentExtractor
 from server.receipt import render_receipt_html, render_receipt_not_found_html
 from server.session import UnifiedSessionOrchestrator
@@ -157,26 +157,34 @@ def create_server_app(
         log_event(logger, "server.db_key", key_fingerprint=db_key_fp)
 
         # 4. Create SQLite DB in DATA_DIR, run schema/triggers, seed synthetic data if empty
+        enc_key = cfg.effective_db_encryption_key()
+        if not enc_key:
+            key_file = cfg.data_dir / ".ledger_key"
+            if key_file.exists():
+                enc_key = key_file.read_text(encoding="utf-8").strip()
+            else:
+                enc_key = generate_key_b64()
+                try:
+                    key_file.write_text(enc_key, encoding="utf-8")
+                except Exception:
+                    pass
+
         if ledger is not None:
             store = ledger
         else:
-            enc_key = cfg.effective_db_encryption_key()
-            if not enc_key:
-                key_file = cfg.data_dir / ".ledger_key"
-                if key_file.exists():
-                    enc_key = key_file.read_text(encoding="utf-8").strip()
-                else:
-                    enc_key = generate_key_b64()
-                    try:
-                        key_file.write_text(enc_key, encoding="utf-8")
-                    except Exception:
-                        pass
             store = Ledger(cfg.resolved_db_path(), enc_key=enc_key)
 
         if auto_seed:
             cust_count = await store.customers_count()
             if cust_count == 0:
                 await seed_demo_data(store)
+
+        workspace_mgr = WorkspaceManager(
+            base_dir=cfg.data_dir,
+            enc_key=enc_key,
+            default_ledger=store,
+            auto_seed=auto_seed,
+        )
 
         # 5. Configure Groq NLU (never arithmetic or query replies)
         nlu_engine: NLUClientProtocol | None = nlu
@@ -188,6 +196,7 @@ def create_server_app(
         if prewarm_tts_cache:
             tts_cache = await _presynthesize_tts_cache(make_tts)
 
+        app_instance.state.workspace_mgr = workspace_mgr
         app_instance.state.ledger = store
         app_instance.state.nlu = nlu_engine
         app_instance.state.tts_cache = tts_cache
@@ -217,6 +226,8 @@ def create_server_app(
             if hasattr(app_instance.state, "active_websockets"):
                 app_instance.state.active_websockets.clear()
 
+            if workspace_mgr is not None:
+                await workspace_mgr.checkpoint_all()
             if store is not None:
                 try:
                     await store.checkpoint()
@@ -229,6 +240,7 @@ def create_server_app(
 
     app = FastAPI(title="Voice Khata", version="0.1.0", lifespan=lifespan)
     app.state.settings = cfg
+    app.state.workspace_mgr = None
     app.state.ledger = ledger
     app.state.nlu = nlu
     app.state.tts_cache = {}
@@ -256,6 +268,26 @@ def create_server_app(
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
+
+        # Demo workspace cookie assignment
+        cookie_val = request.cookies.get(COOKIE_NAME)
+        query_ws = request.query_params.get("workspace") or request.query_params.get("visitor_id")
+        if query_ws and WorkspaceManager.is_valid_visitor_id(query_ws):
+            target_vid = query_ws
+        elif cookie_val and WorkspaceManager.is_valid_visitor_id(cookie_val):
+            target_vid = cookie_val
+        else:
+            target_vid = WorkspaceManager.generate_visitor_id()
+
+        if cookie_val != target_vid:
+            response.set_cookie(
+                COOKIE_NAME,
+                target_vid,
+                max_age=30 * 86400,
+                path="/",
+                samesite="lax",
+                httponly=False,
+            )
         return response
 
     # 1. /ws/session (WebSocket Route)
@@ -266,7 +298,19 @@ def create_server_app(
         lang = LanguageCode.normalize(
             websocket.query_params.get("lang"), default=LanguageCode.HI_IN
         )
-        store: Ledger = app.state.ledger
+
+        # Retrieve isolated workspace ledger for this browser visitor
+        cookie_vid = (
+            websocket.cookies.get(COOKIE_NAME)
+            or websocket.query_params.get("workspace")
+            or websocket.query_params.get("visitor_id")
+        )
+        workspace_mgr: WorkspaceManager | None = getattr(app.state, "workspace_mgr", None)
+        if workspace_mgr is not None and cookie_vid and WorkspaceManager.is_valid_visitor_id(cookie_vid):
+            store = await workspace_mgr.get_ledger(cookie_vid)
+        else:
+            store = app.state.ledger
+
         session_id = f"s_{id(websocket):x}"
         orch = UnifiedSessionOrchestrator(
             transport=websocket,
@@ -337,13 +381,30 @@ def create_server_app(
     # 4. /receipt/* and /r/* (Receipt Routes)
     @app.get("/receipt/{event_id}", response_class=HTMLResponse)
     @app.get("/r/{event_id}", response_class=HTMLResponse)
-    async def view_public_receipt(event_id: str) -> HTMLResponse:
+    async def view_public_receipt(event_id: str, request: Request) -> HTMLResponse:
         """Render a tamper-evident digital receipt for the customer."""
-        store: Ledger | None = app.state.ledger
-        if store is None:
-            raise HTTPException(status_code=503, detail="Ledger not initialized")
-        event = await store.get_event_by_id(event_id)
-        if event is None:
+        cookie_vid = (
+            request.cookies.get(COOKIE_NAME)
+            or request.query_params.get("workspace")
+            or request.query_params.get("visitor_id")
+        )
+        workspace_mgr: WorkspaceManager | None = getattr(app.state, "workspace_mgr", None)
+        store: Ledger | None = None
+        event = None
+
+        if workspace_mgr is not None:
+            found = await workspace_mgr.find_event_across_workspaces(
+                event_id, preferred_visitor_id=cookie_vid
+            )
+            if found is not None:
+                store, event = found
+
+        if store is None or event is None:
+            store = app.state.ledger
+            if store is not None:
+                event = await store.get_event_by_id(event_id)
+
+        if store is None or event is None:
             return HTMLResponse(
                 status_code=404,
                 content=render_receipt_not_found_html(event_id),
@@ -367,18 +428,64 @@ def create_server_app(
         )
 
     @app.get("/receipt/{event_id}/bill/{bill_id}")
-    async def view_receipt_bill(event_id: str, bill_id: str) -> Response:
+    async def view_receipt_bill(event_id: str, bill_id: str, request: Request) -> Response:
         """Serve bill image/document attached to a receipt."""
-        store: Ledger | None = app.state.ledger
-        if store is None:
-            raise HTTPException(status_code=503, detail="Ledger not initialized")
-        res = await store.get_bill_by_id(bill_id)
-        if res is None:
+        cookie_vid = (
+            request.cookies.get(COOKIE_NAME)
+            or request.query_params.get("workspace")
+            or request.query_params.get("visitor_id")
+        )
+        workspace_mgr: WorkspaceManager | None = getattr(app.state, "workspace_mgr", None)
+        store: Ledger | None = None
+        record = None
+        data = None
+
+        if workspace_mgr is not None:
+            found = await workspace_mgr.find_bill_across_workspaces(
+                event_id, bill_id, preferred_visitor_id=cookie_vid
+            )
+            if found is not None:
+                store, record, data = found
+
+        if store is None or record is None or data is None:
+            store = app.state.ledger
+            if store is not None:
+                res = await store.get_bill_by_id(bill_id)
+                if res is not None:
+                    record, data = res
+
+        if store is None or record is None or data is None:
             raise HTTPException(status_code=404, detail="Bill record not found")
-        record, data = res
         if record.event_id != event_id:
             raise HTTPException(status_code=403, detail="Bill does not belong to this event")
         return Response(content=data, media_type=record.mime)
+
+    # 5. /demo/reset & /api/workspace
+    @app.api_route("/demo/reset", methods=["GET", "POST"])
+    async def demo_reset(request: Request) -> Response:
+        """Reset current workspace or create a fresh clean workspace for the visitor."""
+        workspace_mgr: WorkspaceManager | None = getattr(app.state, "workspace_mgr", None)
+        new_vid = WorkspaceManager.generate_visitor_id()
+        if workspace_mgr is not None:
+            await workspace_mgr.get_ledger(new_vid)
+
+        redirect_to = request.query_params.get("next") or "/"
+        response = RedirectResponse(url=redirect_to, status_code=303)
+        response.set_cookie(
+            COOKIE_NAME,
+            new_vid,
+            max_age=30 * 86400,
+            path="/",
+            samesite="lax",
+            httponly=False,
+        )
+        return response
+
+    @app.get("/api/workspace")
+    async def api_workspace(request: Request) -> dict[str, str]:
+        cookie_val = request.cookies.get(COOKIE_NAME)
+        vid = cookie_val if (cookie_val and WorkspaceManager.is_valid_visitor_id(cookie_val)) else "default"
+        return {"workspace_id": vid, "cookie_name": COOKIE_NAME}
 
     # 5. Static Files (/assets, /worklets)
     resolved_static = _resolve_static_dir(static_dir)

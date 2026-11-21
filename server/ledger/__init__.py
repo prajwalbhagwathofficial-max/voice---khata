@@ -31,8 +31,11 @@ from server.ledger.store import (
     LedgerValidationError,
 )
 
+from server.ledger.workspace import COOKIE_NAME, WorkspaceManager
+
 __all__ = [
     "BillRecord",
+    "COOKIE_NAME",
     "CreditRecord",
     "CustomerBalanceRecord",
     "CustomerRecord",
@@ -56,8 +59,8 @@ __all__ = [
     "SEED_CUSTOMERS",
     "SummaryResult",
     "TimelineEventItem",
+    "WorkspaceManager",
     "detect_script",
-
     "generate_key_b64",
     "phonetic_key",
     "seed_demo_data",

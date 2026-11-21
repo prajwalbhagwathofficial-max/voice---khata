@@ -78,6 +78,10 @@ class CustomerRecord(BaseModel):
     script: str
     created_ts: str
 
+    @property
+    def customer_id(self) -> str:
+        return self.id
+
 
 class CustomerAliasRecord(BaseModel):
     """Customer alias mapping for phonetic name matching."""

@@ -678,3 +678,100 @@ def test_websocket_snapshot_summary_queries_and_mode_override(tmp_path: Path) ->
             assert cust_res["advance"] == 0
             assert cust_res["is_advance"] is False
             assert len(cust_res["timeline"]) == 3
+
+
+@pytest.mark.asyncio
+async def test_udhar_3000_then_returned_2998_multilingual(tmp_path: Path) -> None:
+    """Test scenario: Udhar 3000, then user inputs 'he returned 2998' across languages.
+
+    Must state the remaining payable amount is Rs 2 and correctly process across languages.
+    """
+    from server.session import Session
+    from server.ledger.store import Ledger
+    from server.speech.mocks import MockSTT, MockTTS
+    from voice_khata.models import LanguageCode
+
+    class DummyWS:
+        def __init__(self):
+            self.sent_texts: list[str] = []
+            self.sent_bytes: list[bytes] = []
+
+        async def send_text(self, t: str) -> None:
+            self.sent_texts.append(t)
+
+        async def send_bytes(self, b: bytes) -> None:
+            self.sent_bytes.append(b)
+
+    class CapturingTTS(MockTTS):
+        def __init__(self):
+            super().__init__()
+            self.spoken_texts: list[str] = []
+
+        async def synthesize(self, text: str):
+            self.spoken_texts.append(text)
+            async for chunk in super().synthesize(text):
+                yield chunk
+
+    # Scenario 1: Hindi credit 3000, English 'he returned 2998'
+    db_file1 = tmp_path / "scenario1.db"
+    ledger1 = Ledger(db_file1, enc_key="0" * 64)
+    ws1 = DummyWS()
+    tts1 = CapturingTTS()
+    session1 = Session(
+        transport=ws1,
+        ledger=ledger1,
+        nlu=None,
+        stt=MockSTT(),
+        tts=tts1,
+        initial_lang=LanguageCode.HI_IN,
+    )
+
+    async def stream1():
+        yield json.dumps({"t": "session.start", "lang": "hi"})
+        await asyncio.sleep(0.05)
+        yield json.dumps({"t": "inject_text", "text": "Sunil ko 3000 udhar diya", "mode": "gave"})
+        await asyncio.sleep(0.15)
+        yield json.dumps({"t": "inject_text", "text": "he returned 2998", "mode": "gave"})
+        await asyncio.sleep(0.15)
+
+    await session1.run(stream1())
+
+    # Verify balance is 2 rupees
+    sunil_matches = await ledger1.customers_matching("Sunil")
+    assert len(sunil_matches) == 1
+    bal1 = await ledger1.balance(sunil_matches[0].id)
+    assert bal1 == 200  # 200 paise = 2 INR
+
+    # Verify TTS spoken text states the remaining payable amount is 2 rupees
+    assert any("The remaining payable amount is 2 rupees" in s for s in tts1.spoken_texts)
+
+    # Scenario 2: Devanagari Hindi credit 3000, English 'Ramesh returned 2998'
+    db_file2 = tmp_path / "scenario2.db"
+    ledger2 = Ledger(db_file2, enc_key="0" * 64)
+    ws2 = DummyWS()
+    tts2 = CapturingTTS()
+    session2 = Session(
+        transport=ws2,
+        ledger=ledger2,
+        nlu=None,
+        stt=MockSTT(),
+        tts=tts2,
+        initial_lang=LanguageCode.HI_IN,
+    )
+
+    async def stream2():
+        yield json.dumps({"t": "session.start", "lang": "hi"})
+        await asyncio.sleep(0.05)
+        yield json.dumps({"t": "inject_text", "text": "रमेश को 3000 उधार दिया", "mode": "gave"})
+        await asyncio.sleep(0.15)
+        yield json.dumps({"t": "inject_text", "text": "Ramesh returned 2998", "mode": "gave"})
+        await asyncio.sleep(0.15)
+
+    await session2.run(stream2())
+
+    ramesh_matches = await ledger2.customers_matching("Ramesh")
+    assert len(ramesh_matches) == 1
+    bal2 = await ledger2.balance(ramesh_matches[0].id)
+    assert bal2 == 200  # 200 paise = 2 INR
+    assert any("The remaining payable amount is 2 rupees" in s for s in tts2.spoken_texts)
+

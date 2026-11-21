@@ -232,8 +232,10 @@ _PAYMENT_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(rf"""(?xi){_LB}[\u0900-\u097F]+\s+ने{_RB}.*?{_LB}(?:दिए|दिया|जमा\s+किए|जमा\s+किया|चुकाए){_RB}"""),
     re.compile(rf"""(?xi){_LB}[\u0900-\u097F]+\s+से{_RB}.*?{_LB}(?:मिले|मिला|पेमेंट\s+आया){_RB}"""),
     re.compile(rf"""(?xi){_LB}(?:जमा\s+करो|जमा\s+लिखो|जमा\s+हुआ){_RB}"""),
-    # English: "X paid", "received from X", "got from X", "payment from X"
-    re.compile(r"""(?xi)\b\w+\s+(?:paid|cleared|settled)\b"""),
+    # English: "X paid", "received from X", "got from X", "payment from X", "X returned"
+    re.compile(r"""(?xi)\b\w+\s+(?:paid|cleared|settled|returned|repaid)\b"""),
+    re.compile(r"""(?xi)\b(?:returned|repaid|repay|wapas\s+diye|wapas\s+diya|wapas\s+kiye|wapas\s+kiya)\b"""),
+    re.compile(rf"""(?xi){_LB}(?:वापस|लौटा|चुका)(?:\s+(?:दिए|दिया|किया|किए))?{_RB}"""),
     re.compile(r"""(?xi)\b(?:received|got|collected)\b.*?\bfrom\s+\w+\b"""),
     re.compile(r"""(?xi)\bpayment\s+from\s+\w+\b"""),
     # Telugu: "nundi vacchindi", "iccharu", "jama chesaru"
@@ -331,7 +333,7 @@ def _extract_customer_name(
         r"""(?xi)
         \b(?:for|to|from)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)
         | ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:ke|ko|ne|se|ka|ki|nundi|nunchi|ki|ku|ge)\b
-        | ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:\d+|teen|two|three|do|రెండు|ಎರಡು|udhaar|jama|paid)
+        | ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:\d+|teen|two|three|do|రెండు|ಎರಡು|udhaar|jama|paid|returned|repaid|wapas)
         | ([\u0900-\u097F]+)\s+(?:के|को|ने|से|का|की)\b
         | ([\u0C00-\u0C7F]+)\s*(?:కి|కు|నుండి)\b
         | ([\u0C80-\u0CFF]+)\s*(?:ಗೆ|ನಿಂದ)\b
@@ -342,17 +344,21 @@ def _extract_customer_name(
         for g in m.groups():
             if g:
                 cand = g.strip()
-                # Exclude day names or keywords
-                if cand.casefold() not in ("today", "yesterday", "tomorrow", "kal", "aaj", "parso", "monna", "ninna"):
+                # Exclude day names or keywords or pronouns
+                if cand.casefold() not in (
+                    "today", "yesterday", "tomorrow", "kal", "aaj", "parso", "monna", "ninna",
+                    "he", "she", "him", "her", "they", "them", "his", "it", "usne", "unhone", "uska", "unka", "avaru", "atanu"
+                ):
                     return cand, None
 
-    # Fallback: check first word if capitalized and not a command word
+    # Fallback: check first word if capitalized and not a command word or pronoun
     words = norm.split()
     if words:
         first = words[0].strip(",.:")
         if first and first[0].isupper() and first.isalpha():
             if first.casefold() not in (
-                "please", "add", "record", "note", "check", "what", "how", "today", "yesterday", "tomorrow", "undo"
+                "please", "add", "record", "note", "check", "what", "how", "today", "yesterday", "tomorrow", "undo",
+                "he", "she", "him", "her", "they", "them", "his", "it", "usne", "unhone", "uska", "unka", "avaru", "atanu"
             ):
                 return first, None
 

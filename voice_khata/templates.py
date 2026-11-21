@@ -160,6 +160,26 @@ def render_credit_recorded(
 def render_payment_recorded(
     lang: LanguageCode, customer_name: str, amount_rupees: int, balance: CustomerBalance
 ) -> str:
+    if balance.balance_rupees > 0:
+        if lang == LanguageCode.HI_IN:
+            return (
+                f"दर्ज हो गया। {customer_name} से {amount_rupees} रुपये जमा लिखे गए। "
+                f"अब बाकी देय राशि {balance.balance_rupees} रुपये है।"
+            )
+        if lang == LanguageCode.KN_IN:
+            return (
+                f"ದಾಖಲಾಗಿದೆ. {customer_name} ಅವರಿಂದ {amount_rupees} ರೂಪಾಯಿ ಪಾವತಿ ಸೇರಿಸಲಾಗಿದೆ. "
+                f"ಈಗ ಉಳಿದ ಪಾವತಿಸಬೇಕಾದ ಮೊತ್ತ {balance.balance_rupees} ರೂಪಾಯಿ."
+            )
+        if lang == LanguageCode.TE_IN:
+            return (
+                f"నమోదయింది. {customer_name} నుండి {amount_rupees} రూపాయలు జమ చేయబడింది. "
+                f"ఇక చెల్లించాల్సిన మిగిలిన మొత్తం {balance.balance_rupees} రూపాయలు."
+            )
+        return (
+            f"Recorded. Noted {amount_rupees} rupees payment from {customer_name}. "
+            f"The remaining payable amount is {balance.balance_rupees} rupees."
+        )
     bal_phrase = _format_balance_phrase(lang, balance.balance_rupees)
     if lang == LanguageCode.HI_IN:
         return (

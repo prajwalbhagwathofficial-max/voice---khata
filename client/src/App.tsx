@@ -1627,6 +1627,19 @@ export function App() {
           >
             ⚡ Landing &amp; Features
           </button>
+          <button
+            type="button"
+            id="reset-demo-btn"
+            className="nb-topbar-reset-btn"
+            onClick={() => {
+              if (window.confirm("Start a clean private demo workspace? You will get a fresh, isolated ledger.")) {
+                window.location.href = "/demo/reset";
+              }
+            }}
+            title="Start fresh private demo workspace"
+          >
+            🔄 Clean Demo
+          </button>
           <div className="latency-bar" aria-live="polite">
             <span className={`latency-pill latency-${latency.tone}`}>
               Turn: {latency.lastMs !== null ? `${latency.lastMs} ms` : "—"}

@@ -97,6 +97,55 @@ from voice_khata.nlu import NLUClientProtocol, detect_lending_or_pressure
 logger = logging.getLogger("voice_khata.server.session")
 
 
+_ENGLISH_MARKERS: frozenset[str] = frozenset({
+    "returned", "return", "returns", "gave", "give", "given", "paid", "credit",
+    "debited", "debit", "received", "cleared", "settled", "balance", "total",
+    "rupees", "rupee", "rs", "record", "add", "note", "for", "from", "to",
+    "he", "she", "him", "her", "they", "them", "his", "hers", "yesterday", "today", "tomorrow",
+    "undo", "cancel", "yes", "no", "how", "much", "is", "due", "outstanding",
+})
+
+_INDIC_MARKERS: frozenset[str] = frozenset({
+    "ko", "ne", "ka", "ke", "ki", "se", "me", "mein", "diya", "diye", "di", "de",
+    "do", "liya", "liye", "likho", "likh", "udhar", "udhaar", "jama", "wapas",
+    "baaki", "baki", "kitna", "hai", "hain", "tha", "thi", "gaya", "gaye", "karo",
+    "kar", "paisa", "rupaye", "rupiya", "kripya", "nahi", "nahin", "haan", "aaj",
+    "kal", "parso", "usne", "unhone", "uska", "unka", "ge", "ninda", "kotte", "kottaru",
+})
+
+_PRONOUN_WORDS: frozenset[str] = frozenset({
+    "he", "she", "him", "her", "they", "them", "his", "hers", "it",
+    "usne", "unhone", "uska", "uski", "uske", "unka", "unki", "unke", "usse", "unse",
+    "उसने", "उन्होंने", "उसका", "उसकी", "उसके", "उनका", "उनकी", "उनके",
+    "avaru", "avanu", "avalu", "ಅವರು", "ಅವನು", "ಅವಳು",
+    "atanu", "aame", "అతను", "ఆమె",
+})
+
+
+def detect_utterance_language(text: str, default_lang: LanguageCode) -> LanguageCode:
+    """Detect spoken/written language of the transcript across Indic and Latin scripts."""
+    for ch in text:
+        code = ord(ch)
+        if 0x0900 <= code <= 0x097F:
+            return LanguageCode.HI_IN
+        elif 0x0C80 <= code <= 0x0CFF:
+            return LanguageCode.KN_IN
+        elif 0x0C00 <= code <= 0x0C7F:
+            return LanguageCode.TE_IN
+
+    words = set(re.findall(r"[a-zA-Z]+", text.lower()))
+    if not words:
+        return default_lang
+
+    eng_matches = len(words & _ENGLISH_MARKERS)
+    indic_matches = len(words & _INDIC_MARKERS)
+    if eng_matches > indic_matches:
+        return LanguageCode.EN_IN
+    elif indic_matches > eng_matches:
+        return LanguageCode.HI_IN
+    return default_lang
+
+
 def detect_spoken_direction(
     transcript: str, mode_hint: Literal["gave", "got"] | None = None
 ) -> Literal["gave", "got"] | None:
@@ -137,6 +186,11 @@ def detect_spoken_direction(
         "ఇచ్చాను",
         "due",
         "charge",
+        "credit for",
+        "credit to",
+        "credit given",
+        "gave credit",
+        "credit entry",
     )
     credit_indicators = (
         "credit",
@@ -150,6 +204,26 @@ def detect_spoken_direction(
         "पेमेंट",
         "received",
         "got",
+        "returned",
+        "returns",
+        "return",
+        "repaid",
+        "repay",
+        "wapas",
+        "waapas",
+        "वापस",
+        "lotaya",
+        "lautaya",
+        "lautaye",
+        "लौटाया",
+        "लौटाए",
+        "chukaya",
+        "chukaye",
+        "चुकाया",
+        "चुकाए",
+        "settled",
+        "cleared",
+        "paid back",
         "ne diya",
         "ne diye",
         "ने दिया",
@@ -174,6 +248,8 @@ def detect_spoken_direction(
         "వచ్చింది",
         "deposit",
         "deposited",
+        "ಹಿಂತಿರುಗಿಸಿದ",
+        "ವಾಪಸ್",
     )
 
     has_debit = any(k in lower for k in debit_indicators)
@@ -182,8 +258,17 @@ def detect_spoken_direction(
     # Hindi case-marker parsing:
     # "Customer ne [amount] diya/diye" -> Customer gave us money -> Credit / You Got
     padded = f" {lower} "
-    if not has_credit and (" ne " in padded or " ने " in padded) and any(
-        v in lower for v in ("diya", "diye", "दिया", "दिए", "pay", "bheja", "भेजा", "jama")
+    if not has_credit and (
+        (" ne " in padded or " ने " in padded) and any(
+            v in lower for v in ("diya", "diye", "दिया", "दिए", "pay", "bheja", "भेजा", "jama")
+        )
+        or any(
+            v in lower
+            for v in (
+                "returned", "repaid", "wapas", "waapas", "वापस",
+                "lautaya", "lotaya", "लौटाया", "chukaya", "चुकाया"
+            )
+        )
     ):
         has_credit = True
 
@@ -211,6 +296,11 @@ def detect_spoken_direction(
                 "likho",
                 "लिखो",
                 "लिख दो",
+                "credit for",
+                "credit to",
+                "credit entry",
+                "credit given",
+                "gave credit",
             )
         ):
             return "gave"
@@ -254,6 +344,7 @@ class UnifiedSessionOrchestrator:
         self._ai_disclosed_langs: set[LanguageCode] = set()
         self._pending_disambiguation: dict[str, Any] | None = None
         self._pending_clarification: dict[str, Any] | None = None
+        self._last_active_customer: CustomerRecord | None = None
         self._active_bill_upload: dict[str, Any] | None = None
         self._bill_upload_timestamps: list[float] = []
         self._outbound: asyncio.Queue[tuple[str, Any] | None] = asyncio.Queue(maxsize=512)
@@ -1238,9 +1329,10 @@ class UnifiedSessionOrchestrator:
             if items_pre:
                 det_amount = sum(it.amount_inr for it in items_pre)
 
+        eff_lang = detect_utterance_language(transcript, lang)
         if detect_lending_or_pressure(transcript):
             return (
-                ParsedIntent(intent=IntentType.UNSUPPORTED_LENDING, language_code=lang),
+                ParsedIntent(intent=IntentType.UNSUPPORTED_LENDING, language_code=eff_lang),
                 eff_date.isoformat(),
             )
 
@@ -1248,7 +1340,7 @@ class UnifiedSessionOrchestrator:
         if self._nlu is not None:
             try:
                 parsed = await self._nlu.extract_intent(
-                    transcript, default_language=lang, awaiting_confirmation=False
+                    transcript, default_language=eff_lang, awaiting_confirmation=False
                 )
             except Exception as exc:
                 log_event(
@@ -1260,17 +1352,23 @@ class UnifiedSessionOrchestrator:
                 )
 
         if parsed is None:
-            parsed = self._deterministic_intent_fallback(transcript, lang, det_amount)
+            parsed = self._deterministic_intent_fallback(
+                transcript, eff_lang, det_amount, last_customer=self._last_active_customer
+            )
+
+        cname = parsed.customer_name
+        if (not cname or cname.casefold() in _PRONOUN_WORDS) and self._last_active_customer is not None:
+            cname = self._last_active_customer.name
 
         # Hard rule: deterministic Indian number parser takes precedence over LLM amount
         final_amount = det_amount if det_amount is not None else parsed.amount_rupees
         return (
             ParsedIntent(
                 intent=parsed.intent,
-                customer_name=parsed.customer_name,
+                customer_name=cname,
                 amount_rupees=final_amount,
                 item_note=parsed.item_note,
-                language_code=parsed.language_code,
+                language_code=eff_lang,
                 confidence=parsed.confidence,
             ),
             eff_date.isoformat(),
@@ -1278,7 +1376,10 @@ class UnifiedSessionOrchestrator:
 
     @staticmethod
     def _deterministic_intent_fallback(
-        transcript: str, lang: LanguageCode, det_amount: int | None
+        transcript: str,
+        lang: LanguageCode,
+        det_amount: int | None,
+        last_customer: CustomerRecord | None = None,
     ) -> ParsedIntent:
         lower = transcript.casefold()
         words = transcript.strip().split()
@@ -1286,6 +1387,16 @@ class UnifiedSessionOrchestrator:
             "wrong", "entry", "cancel", "undo", "void", "last", "nahi", "please",
             "add", "record", "credit", "payment", "paid", "total", "balance", "kul",
             "baaki", "kitna", "hai", "ke", "ka", "ki", "ne", "ko", "udhaar", "jama",
+            "for", "to", "from", "of", "with",
+            "returned", "return", "returns", "repay", "repaid", "wapas", "waapas",
+            "he", "she", "him", "her", "they", "them", "his", "hers", "it",
+            "usne", "unhone", "uska", "unka", "usse", "unse",
+            "उसने", "उन्होंने", "उसका", "उनकी", "उनके",
+            "वापस", "दिए", "दिया", "लौटाया", "चुकाया", "जमा", "उधार", "रुपये", "पैसे", "को", "ने", "से", "का", "की", "के", "में", "लिखो", "लिख",
+            "avaru", "avanu", "avalu", "ಅವರು", "ಅವನು", "ಅವಳು",
+            "ಕೊಟ್ಟರು", "ಕೊಟ್ಟೆ", "ಬರೆ", "ರೂಪಾಯಿ", "ಜಮಾ", "ಉದ್ರಿ", "ಗೆ", "ನಿಂದ",
+            "atanu", "aame", "అతను", "ఆమె",
+            "ఇచ్చారు", "ఇచ్చాను", "రూపాయలు", "జమ", "అప్పు", "కి", "నుండి",
         }
         cand_name: str | None = None
         for idx, w in enumerate(words):
@@ -1301,6 +1412,9 @@ class UnifiedSessionOrchestrator:
                 else:
                     cand_name = cleaned
                 break
+
+        if (not cand_name or cand_name.casefold() in _PRONOUN_WORDS) and last_customer is not None:
+            cand_name = last_customer.name
 
         if any(k in lower for k in ("undo", "void", "cancel", "wrong entry", "रिवर्स", "रद्द")):
             return ParsedIntent(
@@ -1330,7 +1444,14 @@ class UnifiedSessionOrchestrator:
             return ParsedIntent(
                 intent=IntentType.QUERY_BALANCE, customer_name=cand_name, language_code=lang
             )
-        if any(k in lower for k in ("jama", "paid", "diye", "diya", "payment", "credit", "credited", "जमा", "दिए", "ಪಾವತಿ")):
+        if any(
+            k in lower
+            for k in (
+                "jama", "paid", "diye", "diya", "payment", "credit", "credited",
+                "returned", "return", "returns", "repaid", "repay", "wapas", "waapas",
+                "लौटा", "वापस", "चुका", "ಹಿಂತಿರುಗಿಸಿದ", "ಪಾವತಿ"
+            )
+        ):
             return ParsedIntent(
                 intent=IntentType.RECORD_PAYMENT,
                 customer_name=cand_name,
@@ -1620,6 +1741,7 @@ class UnifiedSessionOrchestrator:
                                 )
                             )
                             new_bal = await self._ledger.balance(cust.id)
+                            self._last_active_customer = cust
                             latency.mark("db_end", op=ev_type.value)
                             ledger_changed = True
 
@@ -1764,6 +1886,7 @@ class UnifiedSessionOrchestrator:
                         else:
                             cust = matches[0]
                             bal = await self._ledger.balance(cust.id)
+                            self._last_active_customer = cust
                             latency.mark("db_end", op="query_balance")
                             bal_model = CustomerBalance(
                                 customer_id=0,
