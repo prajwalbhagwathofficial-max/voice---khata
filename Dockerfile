@@ -2,6 +2,7 @@
 
 # --- Stage 1: Build Vite React/TypeScript client ---
 FROM node:20-alpine AS client-builder
+ENV NODE_OPTIONS="--stack-size=4096"
 WORKDIR /client
 
 COPY client/package.json client/package-lock.json ./
