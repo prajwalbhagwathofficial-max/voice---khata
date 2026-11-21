@@ -1,8 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # --- Stage 1: Build Vite React/TypeScript client ---
-FROM node:20-alpine AS client-builder
-ENV NODE_OPTIONS="--stack-size=4096"
+FROM node:20-slim AS client-builder
 WORKDIR /client
 
 COPY client/package.json client/package-lock.json ./
