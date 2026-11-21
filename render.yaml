@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: voice-khata
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: singapore
+    plan: starter
+    healthCheckPath: /healthz
+    autoDeploy: true
+    disk:
+      name: khata-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+      - key: USE_MOCKS
+        value: "false"
+      - key: STT_MODE
+        value: transcribe
+      - key: FEATURE_BILLS
+        value: "false"
+      - key: FEATURE_SHARE
+        value: "false"
+      - key: CORRECTION_TTL_SECONDS
+        value: "300"
+      - key: AMOUNT_CONFIRM_THRESHOLD_PAISE
+        value: "500000"
+      - key: TRANSCRIPT_TTL_HOURS
+        value: "24"
+      - key: SESSION_IDLE_MINUTES
+        value: "15"
+      - key: GNANI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: DB_ENCRYPTION_KEY
+        sync: false
+      - key: ADMIN_TOKEN
+        sync: false
+      - key: ACCESS_CODE
+        sync: false
