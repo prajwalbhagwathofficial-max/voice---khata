@@ -133,7 +133,7 @@ export function LandingPage({ onLaunchApp, summary, totalDebtors }: LandingPageP
                 className="nb-push-btn nb-btn-black nb-hero-cta"
                 onClick={() => onLaunchApp("home")}
               >
-                Explore Live Demo 🎙️
+                Explore Live
               </button>
             </div>
 
