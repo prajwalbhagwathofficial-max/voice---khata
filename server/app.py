@@ -246,7 +246,7 @@ def create_server_app(
             "media-src 'self' blob:; "
             "style-src 'self' 'unsafe-inline' https://api.fontshare.com; "
             "font-src 'self' https://api.fontshare.com https://cdn.fontshare.com data:; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; "
             "worker-src 'self' blob:;"
         )
         path_lower = request.url.path.lower()

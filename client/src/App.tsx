@@ -782,10 +782,18 @@ export function App() {
     };
   }, [updatePttState]);
 
+  const pressStartTimeRef = useRef<number>(0);
+  const isPressHoldingRef = useRef<boolean>(false);
+
   const startRecording = useCallback(async () => {
     const ws = wsRef.current;
     const audio = audioRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN || !audio) {
+    if (!audio) {
+      setErrorText("Audio system initializing... please try again in a moment.");
+      return;
+    }
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      setErrorText("Connecting to live server... please tap again in a moment.");
       return;
     }
     if (pttStreamingRef.current || pttStateRef.current === "LISTENING") {
@@ -794,6 +802,9 @@ export function App() {
 
     setErrorText(null);
     pttHeldRef.current = true;
+
+    // Direct user-gesture resume for iOS / Android mobile browsers
+    await audio.resumeContext();
 
     // Barge-in: if audio is currently playing, clear ring buffer locally first, then send interrupt
     const wasPlaying = audio.playing || pttStateRef.current === "SPEAKING";
@@ -808,9 +819,18 @@ export function App() {
     } catch (err) {
       pttHeldRef.current = false;
       pttStreamingRef.current = false;
-      setErrorText(
-        err instanceof Error ? `Microphone error: ${err.message}` : "Microphone access denied."
-      );
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        msg.includes("Permission") ||
+        msg.includes("denied") ||
+        msg.includes("NotAllowedError")
+      ) {
+        setErrorText(
+          "Microphone permission was denied. Tap the lock icon in your browser address bar to allow microphone access, then try again."
+        );
+      } else {
+        setErrorText(`Microphone error: ${msg}`);
+      }
       updatePttState("READY");
       return;
     }
@@ -843,7 +863,26 @@ export function App() {
     }, 5000);
   }, [sendJson, updatePttState]);
 
+  const handlePointerDown = useCallback(() => {
+    pressStartTimeRef.current = performance.now();
+    isPressHoldingRef.current = false;
+    void audioRef.current?.resumeContext();
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    const duration = performance.now() - pressStartTimeRef.current;
+    if (duration > 350 && (pttStateRef.current === "LISTENING" || pttStreamingRef.current)) {
+      // User held the button to speak and released
+      isPressHoldingRef.current = true;
+      stopRecording();
+    }
+  }, [stopRecording]);
+
   const handleToggleMic = useCallback(() => {
+    if (isPressHoldingRef.current) {
+      isPressHoldingRef.current = false;
+      return;
+    }
     if (pttStateRef.current === "LISTENING" || pttStreamingRef.current) {
       stopRecording();
     } else {
@@ -1924,7 +1963,7 @@ export function App() {
                 </button>
               </div>
 
-              <div className="home-split-grid">
+              <div className="home-split-grid home-two-col-grid">
                 {/* Left Column: HOLD TO TALK dark panel */}
                 <div className="home-left-col">
                   <div className="voice-panel-dark">
@@ -1943,8 +1982,12 @@ export function App() {
                       className={`voice-circle-btn ${pttState === "LISTENING" ? "listening ptt-listening" : ""}`}
                       disabled={pttDisabled}
                       onClick={handleToggleMic}
+                      onPointerDown={handlePointerDown}
+                      onPointerUp={handlePointerUp}
+                      onPointerCancel={handlePointerUp}
                       aria-pressed={pttState === "LISTENING"}
-                      title={pttLabel[pttState] || "Click to Record Voice"}
+                      title={pttLabel[pttState] || "Click or Hold to Record Voice"}
+                      style={{ touchAction: "manipulation", userSelect: "none", WebkitUserSelect: "none" }}
                     >
                       {pttState === "LISTENING" ? (
                         <svg width="36" height="36" viewBox="0 0 24 24" fill="#ffffff">
@@ -2242,8 +2285,12 @@ export function App() {
                       className={`voice-circle-btn ptt-${pttState.toLowerCase()} ${pttState === "LISTENING" ? "ptt-listening" : ""}`}
                       disabled={pttDisabled}
                       onClick={handleToggleMic}
+                      onPointerDown={handlePointerDown}
+                      onPointerUp={handlePointerUp}
+                      onPointerCancel={handlePointerUp}
                       aria-pressed={pttState === "LISTENING"}
-                      title={pttLabel[pttState] || "Click to Record Voice"}
+                      title={pttLabel[pttState] || "Click or Hold to Record Voice"}
+                      style={{ touchAction: "manipulation", userSelect: "none", WebkitUserSelect: "none" }}
                     >
                       {pttState === "LISTENING" ? (
                         <svg width="36" height="36" viewBox="0 0 24 24" fill="#ffffff">
