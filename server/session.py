@@ -1554,14 +1554,23 @@ class UnifiedSessionOrchestrator:
                                     else (str(raw_key) if raw_key else os.getenv("GROQ_API_KEY"))
                                 )
                                 extracted_items = await extract_items_with_groq_fallback(
-                                    transcript, cust.name, groq_api_key=groq_key
+                                    transcript,
+                                    stated_amount=parsed.amount_rupees,
+                                    customer_name=cust.name,
+                                    groq_api_key=groq_key,
                                 )
-                                if extracted_items:
-                                    items_sum = sum(it.amount_inr for it in extracted_items)
+                                valid_items = [
+                                    it for it in extracted_items
+                                    if it.name.casefold() != cust.name.casefold()
+                                    and cust.name.casefold() not in it.name.casefold()
+                                    and it.name.casefold() not in ("gave", "got", "udhar", "udhaar", "jama", "credit", "debit")
+                                ]
+                                if valid_items:
+                                    items_sum = sum(it.amount_inr for it in valid_items)
                                     if parsed.amount_rupees is not None and items_sum != parsed.amount_rupees:
                                         self._pending_clarification = {
                                             "customer": cust,
-                                            "items": extracted_items,
+                                            "items": valid_items,
                                             "items_sum": items_sum,
                                             "stated_total": parsed.amount_rupees,
                                             "effective_date": eff_date,
@@ -1577,7 +1586,7 @@ class UnifiedSessionOrchestrator:
                                             amount_paise=parsed.amount_rupees * 100,
                                             amount_inr=parsed.amount_rupees,
                                             status="Awaiting clarification",
-                                            items=[it.model_dump() for it in extracted_items],
+                                            items=[it.model_dump() for it in valid_items],
                                             items_sum_paise=items_sum * 100,
                                             items_sum=items_sum,
                                             stated_total_paise=parsed.amount_rupees * 100,
@@ -1588,7 +1597,7 @@ class UnifiedSessionOrchestrator:
                                         await self._speak_text(question_text, turn_id=turn_id, latency=latency)
                                         return
                                     else:
-                                        items_to_record = extracted_items
+                                        items_to_record = valid_items
                                         if parsed.amount_rupees is None:
                                             parsed = ParsedIntent(
                                                 intent=parsed.intent,

@@ -25,6 +25,13 @@ _UNIT_WORDS = {
     "bottle", "bottles", "bori", "tin", "tins", "pouch", "pouches",
 }
 
+# Common grocery keywords in Indian kirana stores
+_GROCERY_WORDS = {
+    "chawal", "atta", "tel", "oil", "rice", "dal", "cheeni", "sugar", "doodh", "milk",
+    "biscuit", "soap", "shampoo", "masala", "mirch", "haldi", "ghee", "sabun", "bread",
+    "butter", "paneer", "maggi", "namkeen", "chai", "tea", "coffee",
+}
+
 # Quantity numbers/words
 _QTY_NUMS = {
     "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "15", "20", "24", "25", "50",
@@ -35,9 +42,11 @@ _QTY_NUMS = {
 
 # Stopwords that belong to header/transaction intent, not items
 _HEADER_STOPWORDS = {
-    "udhar", "udhaar", "उधार", "khata", "likh", "likho", "likh do", "jama", "जमा",
-    "credit", "debit", "paid", "payment", "mila", "mile", "diya", "diye", "rupaye",
-    "rupees", "ka", "ke", "ki", "ko", "ne", "aur", "and",
+    "udhar", "udhaar", "उधार", "khata", "खाता", "likh", "likho", "likh do", "लिखो", "लिख दो",
+    "jama", "जमा", "credit", "debit", "paid", "payment", "पेमेंट", "mila", "mile", "मिला", "मिले",
+    "diya", "diye", "दिया", "दिए", "gave", "give", "given", "got", "received", "bheja", "भेजा",
+    "rupaye", "rupees", "रुपये", "रुपए", "rs", "inr", "ka", "ke", "ki", "ko", "ne", "का", "के", "की", "को", "ने",
+    "aur", "and", "or",
 }
 
 
@@ -55,30 +64,50 @@ _NUM_WORDS = {
 
 def _split_into_clauses(text: str) -> list[str]:
     """Split transcript into clauses by commas, semicolons, and connecting words."""
+    # First: preserve numbers with commas (e.g. 2,500 or 2, 500 or 1,00,000)
+    cleaned = re.sub(r"(?<=\d),\s*(?=\d)", "", text)
     # Separate trailing total/header indicators like 'kul 200', 'total 200'
-    text = re.sub(r"\b(kul|total|sab milakar|mothamu|ottu)\b", r", \1", text, flags=re.IGNORECASE)
-    raw_clauses = re.split(r"[,;।\n]+", text)
+    cleaned = re.sub(r"\b(kul|total|sab milakar|mothamu|ottu)\b", r", \1", cleaned, flags=re.IGNORECASE)
+    raw_clauses = re.split(r"[,;।\n]+", cleaned)
     clauses: list[str] = []
     for c in raw_clauses:
         sub = re.split(r"\s+(?:aur|and|మరియు|ಮತ್ತು)\s+", c.strip())
         for s in sub:
-            cleaned = s.strip()
-            if cleaned:
-                clauses.append(cleaned)
+            cleaned_s = s.strip()
+            if cleaned_s:
+                clauses.append(cleaned_s)
     return clauses
 
 
-def _is_header_clause(clause: str, stated_amount: int | None) -> bool:
-    """Check if this clause is the main transaction header (e.g. 'Ramesh ka 340 udhaar')."""
+def _is_header_clause(
+    clause: str, stated_amount: int | None = None, customer_name: str | None = None
+) -> bool:
+    """Check if this clause is the main transaction header (e.g. 'Ramesh ka 340 udhaar' or 'Sunil gave 2500')."""
     lower = clause.casefold()
     if any(k in lower for k in ("kul", "total", "summary", "mothamu", "ottu", "sab milakar")):
         return True
-    has_dir = any(k in lower for k in ("udhaar", "udhar", "khata", "likh", "jama", "credit", "debit"))
-    if stated_amount is not None:
+
+    words = set(re.findall(r"[a-zA-Z\u0900-\u097F]+", lower))
+    has_items = bool(words & _UNIT_WORDS or words & _GROCERY_WORDS)
+
+    has_dir = any(
+        k in lower
+        for k in (
+            "udhaar", "udhar", "khata", "likh", "jama", "credit", "debit",
+            "gave", "give", "given", "got", "diya", "diye", "paid", "payment",
+            "received", "bheja", "ne diya", "ko diya"
+        )
+    )
+
+    if not has_items and (has_dir or (customer_name and customer_name.casefold() in lower)):
+        return True
+
+    if stated_amount is not None and not has_items:
         amt = parse_amount(clause)
         if amt == stated_amount and has_dir:
             return True
-    return has_dir and (" ka " in f" {lower} " or " ke " in f" {lower} " or " ne " in f" {lower} " or " ko " in f" {lower} ")
+
+    return False
 
 
 def _extract_amount_suffix(tokens: list[str]) -> tuple[int | None, int | None]:
@@ -127,7 +156,7 @@ def _extract_amount_suffix(tokens: list[str]) -> tuple[int | None, int | None]:
     return None, None
 
 
-def _extract_single_item(clause: str) -> EntryItemInput | None:
+def _extract_single_item(clause: str, customer_name: str | None = None) -> EntryItemInput | None:
     """Extract item name, quantity, and amount from a single clause like '2 kilo chawal 120' or 'tel 220'."""
     tokens = clause.strip().split()
     if not tokens:
@@ -164,23 +193,35 @@ def _extract_single_item(clause: str) -> EntryItemInput | None:
     name = " ".join(name_tokens).strip(".,!?:- ")
     name_clean = " ".join(w for w in name.split() if w.lower() not in _HEADER_STOPWORDS).strip()
     if not name_clean:
-        name_clean = name
+        return None
 
-    if not name_clean:
+    # Hard guard: an item name cannot be the customer name or transaction verbs
+    if customer_name:
+        cn_lower = customer_name.casefold()
+        nc_lower = name_clean.casefold()
+        if cn_lower == nc_lower or cn_lower in nc_lower or nc_lower in cn_lower:
+            return None
+
+    words = [w.casefold() for w in name_clean.split()]
+    if all(w in _HEADER_STOPWORDS for w in words):
         return None
 
     return EntryItemInput(name=name_clean, qty_text=qty_text, amount_inr=amount)
 
 
-def extract_items_rule_based(transcript: str, stated_amount: int | None = None) -> list[EntryItemInput]:
+def extract_items_rule_based(
+    transcript: str, stated_amount: int | None = None, customer_name: str | None = None
+) -> list[EntryItemInput]:
     """Extract item entries from transcript using deterministic regex and numbers.py."""
-    clauses = _split_into_clauses(transcript)
+    # First: clean numbers with commas (e.g. 2,500 -> 2500)
+    cleaned_transcript = re.sub(r"(?<=\d),\s*(?=\d)", "", transcript)
+    clauses = _split_into_clauses(cleaned_transcript)
     items: list[EntryItemInput] = []
 
     for c in clauses:
-        if _is_header_clause(c, stated_amount):
+        if _is_header_clause(c, stated_amount, customer_name):
             continue
-        item = _extract_single_item(c)
+        item = _extract_single_item(c, customer_name)
         if item is not None:
             items.append(item)
 
@@ -188,9 +229,13 @@ def extract_items_rule_based(transcript: str, stated_amount: int | None = None) 
     # e.g. "Ramesh ka 340 udhaar 2 kilo chawal 120 tel 220"
     if not items:
         # Strip header part (up to 'udhaar', 'jama', etc.)
-        match = re.search(r"\b(udhaar|udhar|jama|likho|likh do|credit|debit)\b", transcript, re.IGNORECASE)
+        match = re.search(
+            r"\b(udhaar|udhar|jama|likho|likh do|credit|debit|gave|got|diya|diye|paid|payment)\b",
+            cleaned_transcript,
+            re.IGNORECASE,
+        )
         if match:
-            rest = transcript[match.end():].strip()
+            rest = cleaned_transcript[match.end():].strip()
             # Split rest on pattern: boundary after a number when followed by a non-digit token
             units = r"(?:kilo|kg|gram|gm|g|litre|ltr|l|darjan|dozen|packet|pkt|pouch|cup|glass|botal|bottle)"
             marked = re.sub(
@@ -201,7 +246,7 @@ def extract_items_rule_based(transcript: str, stated_amount: int | None = None) 
             )
             sub_chunks = [sc.strip() for sc in marked.split("|") if sc.strip()]
             for chunk in sub_chunks:
-                item = _extract_single_item(chunk)
+                item = _extract_single_item(chunk, customer_name)
                 if item is not None:
                     items.append(item)
 
@@ -211,6 +256,7 @@ def extract_items_rule_based(transcript: str, stated_amount: int | None = None) 
 async def extract_items_with_groq_fallback(
     transcript: str,
     stated_amount: int | None = None,
+    customer_name: str | None = None,
     *,
     groq_api_key: str | None = None,
     groq_model: str = "llama-3.1-8b-instant",
@@ -219,9 +265,20 @@ async def extract_items_with_groq_fallback(
     
     Item AMOUNTS always come from nlu/numbers.py, never the LLM.
     """
-    rule_items = extract_items_rule_based(transcript, stated_amount)
+    rule_items = extract_items_rule_based(transcript, stated_amount, customer_name)
     if rule_items:
         return rule_items
+
+    # Guard: Do NOT invoke Groq fallback on simple single transactions without item hints
+    lower = transcript.casefold()
+    item_unit_keywords = (
+        "kilo", "kg", "gram", "gm", "litre", "liter", "ltr", "packet", "pkt", "dozen", "darjan",
+        "chawal", "atta", "tel", "oil", "rice", "dal", "cheeni", "sugar", "doodh", "milk", "biscuit",
+        "soap", "shampoo", "masala", "mirch", "haldi", "ghee", "sabun"
+    )
+    has_item_hints = any(k in lower for k in item_unit_keywords) or (" aur " in lower) or (" and " in lower)
+    if not has_item_hints:
+        return []
 
     # If no items detected or API key missing, return empty
     if not groq_api_key:
@@ -232,8 +289,9 @@ async def extract_items_with_groq_fallback(
 
         # Groq strict JSON schema extraction for NAMES and QTY ONLY (amounts strictly forbidden)
         prompt = (
-            "Extract any shopkeeper bill items from the following utterance.\n"
+            "Extract grocery/kirana line items from the following utterance.\n"
             "Utterance: " + transcript + "\n\n"
+            "Do NOT include customer names or transaction actions (e.g., 'gave', 'udhar', 'paid').\n"
             "Return JSON matching: {\"items\": [{\"name\": \"item name\", \"qty_text\": \"qty or null\"}]}.\n"
             "Do NOT extract amounts or prices."
         )
@@ -251,7 +309,8 @@ async def extract_items_with_groq_fallback(
                         {
                             "role": "system",
                             "content": (
-                                "You are a kirana store parser. Extract item names and quantities only. "
+                                "You are a kirana store bill parser. Extract grocery line items only. "
+                                "Never treat customer names or transaction verbs (gave, got, udhaar, jama) as items. "
                                 "Never extract amounts. Return strictly valid JSON."
                             ),
                         },
@@ -266,14 +325,22 @@ async def extract_items_with_groq_fallback(
                 raw_content = data["choices"][0]["message"]["content"]
                 parsed = json.loads(raw_content)
                 extracted_candidates = parsed.get("items", [])
-                
+
                 # Now match each item back to numbers.py to strictly determine amounts!
                 final_items: list[EntryItemInput] = []
                 for cand in extracted_candidates:
-                    c_name = cand.get("name")
+                    c_name = str(cand.get("name") or "").strip()
                     c_qty = cand.get("qty_text")
                     if not c_name:
                         continue
+                    cn_lower = c_name.casefold()
+                    if customer_name:
+                        cust_lower = customer_name.casefold()
+                        if cust_lower == cn_lower or cust_lower in cn_lower or cn_lower in cust_lower:
+                            continue
+                    if all(w in _HEADER_STOPWORDS for w in cn_lower.split()):
+                        continue
+
                     # Search for this item name in transcript and extract number following it
                     pattern = rf"{re.escape(c_name)}.*?(\d+|[\u0966-\u096F]+|[a-zA-Z\u0900-\u097F]+(?:\s+[a-zA-Z\u0900-\u097F]+)*)"
                     m = re.search(pattern, transcript, re.IGNORECASE)

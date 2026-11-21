@@ -285,3 +285,38 @@ async def test_customer_consent_and_zero_server_phone_storage(temp_ledger):
     assert share_rec.type == LedgerEventType.SHARE_LOGGED
     assert share_rec.customer_id == cust.id
     assert "channel:whatsapp" in share_rec.note
+
+
+@pytest.mark.asyncio
+async def test_simple_transaction_does_not_trigger_false_item_clarification(temp_ledger):
+    transport = DummyWebSocket()
+    session = Session(
+        transport=transport,
+        ledger=temp_ledger,
+        nlu=None,
+        stt=MockSTT(),
+        tts=MockTTS(),
+        initial_lang=LanguageCode.HI_IN,
+    )
+
+    async def fake_stream():
+        yield '{"t": "session.start", "lang": "hi"}'
+        await asyncio.sleep(0.05)
+        # Sunil gave 2500 should never trigger item clarification with ₹2 or item names
+        yield '{"t": "inject_text", "text": "Sunil gave 2500", "mode": "gave"}'
+        await asyncio.sleep(0.15)
+
+    await session.run(fake_stream())
+
+    # Clarification must NOT be triggered
+    clarifications = [t for t in transport.sent_texts if '"CLARIFICATION_REQUIRED"' in t]
+    assert len(clarifications) == 0
+
+    # Entry must be recorded
+    payments = await temp_ledger.payments_list()
+    credits = await temp_ledger.credits_list()
+    all_entries = payments + credits
+    assert len(all_entries) == 1
+    assert all_entries[0].amount_inr == 2500
+    assert len(all_entries[0].items) == 0
+
