@@ -176,6 +176,7 @@ async def api_settings():
 @app.get("/api/settings/keys-status")
 async def api_keys_status():
     mask = lambda k: (k[:4] + "..." + k[-4:]) if (k and len(k) > 8) else ("****" if k else None)
+    supa_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_ANON_KEY", "")
     return {
         "groq": {
             "configured": bool(GROQ_API_KEY),
@@ -187,6 +188,12 @@ async def api_keys_status():
             "configured": bool(GNANI_API_KEY),
             "masked": mask(GNANI_API_KEY),
             "apiKey": GNANI_API_KEY or "",
+        },
+        "supabase": {
+            "configured": bool(os.getenv("SUPABASE_URL") and supa_key),
+            "url": os.getenv("SUPABASE_URL", ""),
+            "maskedKey": mask(supa_key),
+            "apiKey": supa_key,
         },
         "db": {"configured": bool(DB_ENCRYPTION_KEY), "fingerprint": get_key_fingerprint(DB_ENCRYPTION_KEY)},
     }
@@ -200,6 +207,10 @@ async def update_api_keys(req: Request):
             GROQ_API_KEY = str(data["groqApiKey"]).strip()
         if data.get("gnaniApiKey"):
             GNANI_API_KEY = str(data["gnaniApiKey"]).strip()
+        if data.get("supabaseUrl"):
+            os.environ["SUPABASE_URL"] = str(data["supabaseUrl"]).strip()
+        if data.get("supabaseServiceKey"):
+            os.environ["SUPABASE_SERVICE_ROLE_KEY"] = str(data["supabaseServiceKey"]).strip()
         return {"success": True, "message": "API keys updated successfully"}
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=400)
