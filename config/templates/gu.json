@@ -1,0 +1,35 @@
+{
+  "_comment": "Gujarati message templates.",
+  "language": "gu",
+  "language_name": "ગુજરાતી",
+
+  "ai_disclosure": "નમસ્તે! હું {shop} નો AI સહાયક છું. ખાતાનો હિસાબ રાખવામાં મદદ કરું છું.",
+
+  "reminder_first": "નમસ્તે {name} જી, {shop} તરફથી. તમારી ₹{total} ની બાકી {days} દિવસથી છે. કૃપા કરીને જલ્દી ચૂકવો. આભાર!",
+  "reminder_repeat": "નમસ્તે {name} જી, {shop} યાદ અપાવે છે. તમારી ₹{total} બાકી હજુ છે. કૃપા કરીને ચૂકવો.",
+  "reminder_weekly_summary": "નમસ્તે {name} જી, {shop} સાપ્તાહિક હિસાબ. કુલ બાકી ₹{total}. દુકાને સંપર્ક કરો.",
+  "reminder_high_due": "નમસ્તે {name} જી, {shop} તરફથી. તમારી બાકી ₹{total} ખૂબ વધી ગઈ છે. જલ્દી ચૂકવો.",
+  "thank_you": "આભાર {name} જી! {shop} પર તમારો હિસાબ પૂરો થઈ ગયો છે!",
+
+  "credit_added": "{name} જી, ₹{amount} ઉધાર ઉમેર્યા. કુલ બાકી ₹{total}.",
+  "payment_received": "{name} જી, ₹{amount} જમા થયા. બાકી ₹{total}.",
+  "due_cleared": "{name} જી, તમારો બધો હિસાબ ચૂકતે થઈ ગયો! આભાર!",
+  "total_query": "{name} જી ની કુલ બાકી ₹{total} છે.",
+  "today_summary": "આજનું કુલ ઉધાર ₹{total} છે.",
+
+  "high_due_warning": "ચેતવણી: {name} જી ની બાકી ₹{total} મર્યાદાથી વધુ છે.",
+  "high_due_confirm": "{name} જી ની બાકી મર્યાદા પાર કરી ગઈ છે. છતાં ઉધાર આપવું છે?",
+  "distance_warning": "તમે દુકાનથી દૂર છો.",
+
+  "ask_which_customer": "ઘણા {name} મળ્યા. કયા {name}?",
+  "ask_name": "નવા ગ્રાહકનું નામ જણાવો.",
+  "ask_address": "સરનામું જણાવો.",
+  "ask_phone": "ફોન નંબર જણાવો.",
+  "ask_whatsapp_consent": "WhatsApp પર યાદ અપાવી શકીએ?",
+  "confirm_new_customer": "{name}, {city}. ₹{amount} ઉધાર. સાચું છે?",
+
+  "error_no_name": "કૃપા કરીને ગ્રાહકનું નામ જણાવો.",
+  "error_no_amount": "કેટલા રૂપિયા છે તે જણાવો.",
+  "error_not_understood": "બોલો ભાઈ! કોનો હિસાબ જોવો છે કે ઉધાર લખવું છે?",
+  "error_invalid_phone": "સાચો ફોન નંબર જણાવો."
+}

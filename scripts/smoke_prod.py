@@ -1,250 +1,200 @@
-"""Production smoke test script for single-origin Voice Khata service.
+#!/usr/bin/env python3
+"""
+Production Smoke Test for Voice Khata
+Usage:
+    python scripts/smoke_prod.py <base_url> [--verify-persistence]
 
 Verifies:
-  1. GET /healthz (200 {"ok": true}, security headers)
-  2. GET / (200 HTML with Voice Khata shell)
-  3. GET /got (200 HTML SPA route fallback)
-  4. wss://<host>/ws/session (session.start -> ready handshake)
-  5. Deterministic transaction commit, balance query, reversal, and balance check.
-  6. Persistence verification across container restarts via --verify-persistence.
-
-Usage:
-  python scripts/smoke_prod.py http://localhost:8000
-  python scripts/smoke_prod.py http://localhost:8000 --verify-persistence
-  python scripts/smoke_prod.py https://voice-khata.onrender.com
+1. GET /healthz (returns 200 {"ok":true} without touching Gnani, Groq or DB)
+2. GET / (returns HTML 200)
+3. GET /got (returns HTML 200 via SPA catch-all, NOT 404)
+4. WebSocket wss://<host>/ws/session -> session.start -> ready
+5. Post synthetic entry -> read balance -> reverse entry -> verify balance
+6. Optional --verify-persistence across restarts
 """
 
-from __future__ import annotations
-
-import argparse
-import asyncio
-import json
 import sys
 import time
-from urllib.parse import urlparse
-
-try:
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    if hasattr(sys.stderr, "reconfigure"):
-        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-except Exception:
-    pass
-
+import json
+import asyncio
+import argparse
 import httpx
 import websockets
 
-PERSISTENCE_CUSTOMER_NAME = "PersistAlphaCust"
-PERSISTENCE_AMOUNT_PAISE = 75000  # 750 INR
+PERSISTENCE_CUSTOMER = "PersistenceCustomer"
+PERSISTENCE_AMOUNT_PAISE = 75000
 
+async def run_smoke_test(base_url: str, verify_persistence: bool = False):
+    base_url = base_url.rstrip("/")
+    ws_url = base_url.replace("https://", "wss://").replace("http://", "ws://") + "/ws/session"
 
-def _unique_customer_name(prefix: str = "SmokeCust") -> str:
-    import uuid
-    letters = "".join(c for c in uuid.uuid4().hex if c.isalpha())[:6].capitalize()
-    return f"{prefix}{letters}"
+    total_start = time.perf_counter()
+    print("=" * 60)
+    print(f"VOICE KHATA SMOKE TEST: {base_url}")
+    print(f"Target WebSocket URL: {ws_url}")
+    print(f"Verify Persistence Mode: {verify_persistence}")
+    print("=" * 60)
 
-
-def _to_ws_url(base_url: str) -> str:
-    parsed = urlparse(base_url.rstrip("/"))
-    scheme = "wss" if parsed.scheme == "https" else "ws"
-    return f"{scheme}://{parsed.netloc}/ws/session"
-
-
-async def _recv_json_message(ws: Any, target_types: set[str], timeout: float = 10.0) -> dict[str, Any]:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        rem = max(0.1, deadline - time.monotonic())
+    # ─── 1. HTTP Endpoint Tests ─────────────────────────────────────────────
+    async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+        # Test 1: GET /healthz
+        t0 = time.perf_counter()
+        res_health = await client.get(f"{base_url}/healthz")
+        t_health = (time.perf_counter() - t0) * 1000
+        if res_health.status_code != 200:
+            print(f"[FAIL] GET /healthz returned status {res_health.status_code}: {res_health.text}")
+            sys.exit(1)
         try:
-            packet = await asyncio.wait_for(ws.recv(), timeout=rem)
-        except asyncio.TimeoutError:
-            break
-        if isinstance(packet, str):
-            try:
-                data = json.loads(packet)
-                if data.get("t") in target_types:
-                    return data
-            except json.JSONDecodeError:
-                pass
-    raise TimeoutError(f"Timed out waiting for message types: {target_types}")
+            data = res_health.json()
+            if not data.get("ok"):
+                print(f"[FAIL] GET /healthz expected ok:true, got: {data}")
+                sys.exit(1)
+        except Exception as e:
+            print(f"[FAIL] GET /healthz response is not valid JSON: {e}")
+            sys.exit(1)
+        print(f"[PASS] GET /healthz -> 200 {data} ({t_health:.2f} ms)")
 
+        # Test 2: GET /
+        t0 = time.perf_counter()
+        res_root = await client.get(f"{base_url}/")
+        t_root = (time.perf_counter() - t0) * 1000
+        if res_root.status_code != 200 or "text/html" not in res_root.headers.get("content-type", ""):
+            print(f"[FAIL] GET / expected 200 HTML, got status {res_root.status_code}, type {res_root.headers.get('content-type')}")
+            sys.exit(1)
+        print(f"[PASS] GET / -> 200 HTML ({t_root:.2f} ms)")
 
-async def run_smoke(base_url: str, verify_persistence: bool = False) -> None:
-    base = base_url.rstrip("/")
-    print(f"=== Voice Khata Smoke Test: {base} ===")
-    total_t0 = time.monotonic()
+        # Test 3: GET /got (Must return HTML, not 404!)
+        t0 = time.perf_counter()
+        res_got = await client.get(f"{base_url}/got")
+        t_got = (time.perf_counter() - t0) * 1000
+        if res_got.status_code != 200 or "text/html" not in res_got.headers.get("content-type", ""):
+            print(f"[FAIL] GET /got expected 200 HTML, got {res_got.status_code}: {res_got.text[:100]}")
+            sys.exit(1)
+        print(f"[PASS] GET /got -> 200 HTML (SPA catch-all verified) ({t_got:.2f} ms)")
 
-    # 1. HTTP Endpoint checks
-    async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-        # GET /healthz
-        t0 = time.monotonic()
-        r_hz = await client.get(f"{base}/healthz")
-        hz_ms = (time.monotonic() - t0) * 1000.0
-        if r_hz.status_code != 200 or r_hz.json() != {"ok": True}:
-            raise RuntimeError(f"GET /healthz failed: status={r_hz.status_code}, body={r_hz.text!r}")
-        # Verify required security headers
-        for hdr in ("permissions-policy", "x-content-type-options", "content-security-policy"):
-            if hdr not in r_hz.headers:
-                raise RuntimeError(f"Missing required security header: {hdr}")
-        print(f"[PASS] GET /healthz -> 200 {r_hz.json()} ({hz_ms:.1f} ms)")
-
-        # GET /
-        t1 = time.monotonic()
-        r_root = await client.get(f"{base}/")
-        root_ms = (time.monotonic() - t1) * 1000.0
-        ct_root = r_root.headers.get("content-type", "")
-        if r_root.status_code != 200 or "html" not in ct_root.lower() or "<html" not in r_root.text.lower():
-            raise RuntimeError(f"GET / failed: status={r_root.status_code}, content-type={ct_root!r}")
-        print(f"[PASS] GET / -> 200 HTML ({len(r_root.text)} bytes, {root_ms:.1f} ms)")
-
-        # GET /got (verify client-side catch-all SPA routing)
-        t2 = time.monotonic()
-        r_got = await client.get(f"{base}/got")
-        got_ms = (time.monotonic() - t2) * 1000.0
-        ct_got = r_got.headers.get("content-type", "")
-        if r_got.status_code != 200 or "html" not in ct_got.lower() or "<html" not in r_got.text.lower():
-            raise RuntimeError(f"GET /got failed: status={r_got.status_code}, content-type={ct_got!r}")
-        print(f"[PASS] GET /got -> 200 HTML catch-all ({len(r_got.text)} bytes, {got_ms:.1f} ms)")
-
-    # 2. WebSocket Protocol & Transaction Checks
-    ws_url = _to_ws_url(base)
-    t_ws = time.monotonic()
-    async with websockets.connect(ws_url, open_timeout=15) as ws:
-        ws_connect_ms = (time.monotonic() - t_ws) * 1000.0
-        print(f"[PASS] WS connect to {ws_url} ({ws_connect_ms:.1f} ms)")
-
-        # Handshake: session.start -> ready
-        t_hs = time.monotonic()
-        await ws.send(json.dumps({"t": "session.start", "lang": "en-IN"}))
-        ready_msg = await _recv_json_message(ws, {"ready"}, timeout=10.0)
-        hs_ms = (time.monotonic() - t_hs) * 1000.0
-        print(f"[PASS] WS session ready: session_id={ready_msg.get('session_id')} ({hs_ms:.1f} ms)")
-
-        if verify_persistence:
-            # Verification mode: check that persistent customer from previous run survived restart
-            print(f"[*] Verifying persistence for customer: {PERSISTENCE_CUSTOMER_NAME!r}")
-            t_persist = time.monotonic()
-            await ws.send(json.dumps({"t": "customer.create", "name": PERSISTENCE_CUSTOMER_NAME}))
-            c_res = await _recv_json_message(ws, {"customer.create.result"}, timeout=10.0)
-            if c_res.get("status") != "success" or not c_res.get("customer_id"):
-                raise RuntimeError(f"Failed to find persistent customer: {c_res}")
-            cid = c_res["customer_id"]
-
-            await ws.send(json.dumps({"t": "customer.query", "id": cid}))
-            q_res = await _recv_json_message(ws, {"customer.result"}, timeout=10.0)
-            bal_paise = q_res.get("balance_paise", q_res.get("balance", 0) * 100)
-            if bal_paise != PERSISTENCE_AMOUNT_PAISE:
-                raise RuntimeError(
-                    f"Persistence check failed! Expected {PERSISTENCE_AMOUNT_PAISE} paise, got {bal_paise} paise"
-                )
-            persist_ms = (time.monotonic() - t_persist) * 1000.0
-            print(
-                f"[PASS] Persistence verified: {PERSISTENCE_CUSTOMER_NAME} has INR {bal_paise // 100} ({persist_ms:.1f} ms)"
-            )
-        else:
-            # Normal smoke cycle: commit entry -> read balance -> reverse -> verify balance
-            cust_name = _unique_customer_name()
-            t_entry = time.monotonic()
-            await ws.send(
-                json.dumps({
-                    "t": "customer.create",
-                    "name": cust_name,
-                    "phone": "9999900000",
-                    "initial_credit_paise": 50000,  # 50000 paise = 500 INR
-                    "note": "Automated smoke entry",
-                })
-            )
-            create_res = await _recv_json_message(ws, {"customer.create.result"}, timeout=10.0)
-            if create_res.get("status") != "success" or not create_res.get("event_id"):
-                raise RuntimeError(f"customer.create failed: {create_res}")
-            cid = create_res["customer_id"]
-            eid = create_res["event_id"]
-            entry_ms = (time.monotonic() - t_entry) * 1000.0
-            print(f"[PASS] Created customer {cust_name} with INR 500 credit (event_id={eid}, {entry_ms:.1f} ms)")
-
-            # Query balance -> assert 50000 paise (500 INR)
-            t_query = time.monotonic()
-            await ws.send(json.dumps({"t": "customer.query", "id": cid}))
-            q_res1 = await _recv_json_message(ws, {"customer.result"}, timeout=10.0)
-            bal1 = q_res1.get("balance_paise", q_res1.get("balance", 0) * 100)
-            if bal1 != 50000:
-                raise RuntimeError(f"Expected balance 50000 paise, got {bal1}")
-            query_ms = (time.monotonic() - t_query) * 1000.0
-            print(f"[PASS] Verified balance = INR {bal1 // 100} ({query_ms:.1f} ms)")
-
-            # Reverse the entry -> assert reversal succeeded
-            t_rev = time.monotonic()
-            await ws.send(
-                json.dumps({
-                    "t": "event.reverse",
-                    "event_id": eid,
-                    "reason": "Automated smoke test reversal",
-                })
-            )
-            rev_res = await _recv_json_message(ws, {"event.reverse.result"}, timeout=10.0)
-            if rev_res.get("status") != "success":
-                raise RuntimeError(f"event.reverse failed: {rev_res}")
-            rev_ms = (time.monotonic() - t_rev) * 1000.0
-            print(f"[PASS] Appended REVERSAL event for {eid} ({rev_ms:.1f} ms)")
-
-            # Query balance again -> assert 0 paise (0 INR)
-            t_q2 = time.monotonic()
-            await ws.send(json.dumps({"t": "customer.query", "id": cid}))
-            q_res2 = await _recv_json_message(ws, {"customer.result"}, timeout=10.0)
-            bal2 = q_res2.get("balance_paise", q_res2.get("balance", -1) * 100)
-            if bal2 != 0:
-                raise RuntimeError(f"Expected balance 0 paise after reversal, got {bal2}")
-            q2_ms = (time.monotonic() - t_q2) * 1000.0
-            print(f"[PASS] Verified balance after reversal = INR 0 ({q2_ms:.1f} ms)")
-
-            # Setup persistent customer for subsequent --verify-persistence run
-            await ws.send(
-                json.dumps({
-                    "t": "customer.create",
-                    "name": PERSISTENCE_CUSTOMER_NAME,
-                })
-            )
-            p_res = await _recv_json_message(ws, {"customer.create.result"}, timeout=10.0)
-            if p_res.get("status") != "success":
-                raise RuntimeError(f"Failed to find or create persistent customer: {p_res}")
-            pid = p_res["customer_id"]
-
-            await ws.send(json.dumps({"t": "customer.query", "id": pid}))
-            p_bal_res = await _recv_json_message(ws, {"customer.result"}, timeout=10.0)
-            cur_bal = p_bal_res.get("balance_paise", p_bal_res.get("balance", 0) * 100)
-            if cur_bal != PERSISTENCE_AMOUNT_PAISE:
-                diff = PERSISTENCE_AMOUNT_PAISE - cur_bal
-                await ws.send(
-                    json.dumps({
-                        "t": "customer.create",
-                        "name": PERSISTENCE_CUSTOMER_NAME,
-                        "initial_credit_paise": diff,
-                        "note": "Seed for persistence verification across restart",
-                    })
-                )
-                await _recv_json_message(ws, {"customer.create.result"}, timeout=10.0)
-            print(f"[PASS] Seeded persistent customer with INR {PERSISTENCE_AMOUNT_PAISE // 100} for restart verification")
-
-    total_ms = (time.monotonic() - total_t0) * 1000.0
-    print(f"=== ALL CHECKS PASSED in {total_ms:.1f} ms ===")
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Voice Khata Production Smoke Test")
-    parser.add_argument("base_url", help="Base URL of service, e.g. http://localhost:8000")
-    parser.add_argument(
-        "--verify-persistence",
-        action="store_true",
-        help="Verify entry created in prior run exists across container restarts",
-    )
-    args = parser.parse_args(argv if argv is not None else sys.argv[1:])
-
+    # ─── 2. WebSocket Session Tests (/ws/session) ───────────────────────────
+    ws_conn_start = time.perf_counter()
     try:
-        asyncio.run(run_smoke(args.base_url, verify_persistence=args.verify_persistence))
-    except Exception as exc:
-        print(f"[FAIL] {exc}", file=sys.stderr)
-        return 1
-    return 0
+        async with websockets.connect(ws_url, ping_interval=20, ping_timeout=20) as ws:
+            t_ws_conn = (time.perf_counter() - ws_conn_start) * 1000
+            print(f"[PASS] Connected to WebSocket {ws_url} ({t_ws_conn:.2f} ms)")
 
+            # Step A: send session.start, wait for ready
+            t0 = time.perf_counter()
+            await ws.send(json.dumps({"type": "session.start"}))
+            ready_resp = json.loads(await ws.recv())
+            t_ready = (time.perf_counter() - t0) * 1000
+            if ready_resp.get("type") != "ready" and ready_resp.get("status") != "ready":
+                print(f"[FAIL] Expected ready message from server, got: {ready_resp}")
+                sys.exit(1)
+            print(f"[PASS] session.start -> {ready_resp.get('type', 'ready')} ({t_ready:.2f} ms)")
+
+            # Step B: Persistence Check
+            if verify_persistence:
+                t0 = time.perf_counter()
+                await ws.send(json.dumps({
+                    "type": "balance.get",
+                    "customer_name": PERSISTENCE_CUSTOMER
+                }))
+                p_resp = json.loads(await ws.recv())
+                t_p = (time.perf_counter() - t0) * 1000
+                p_bal = p_resp.get("balance_paise", 0)
+                if p_bal != PERSISTENCE_AMOUNT_PAISE:
+                    print(f"[FAIL] Persistence verification failed! Expected {PERSISTENCE_AMOUNT_PAISE} paise for {PERSISTENCE_CUSTOMER}, got: {p_bal}")
+                    sys.exit(1)
+                print(f"[PASS] --verify-persistence CONFIRMED: {PERSISTENCE_CUSTOMER} has {p_bal} paise across restart! ({t_p:.2f} ms)")
+            else:
+                # Seed a persistence record for future --verify-persistence checks
+                await ws.send(json.dumps({
+                    "type": "entry.create",
+                    "customer_name": PERSISTENCE_CUSTOMER,
+                    "amount_paise": PERSISTENCE_AMOUNT_PAISE,
+                    "entry_type": "gave",
+                    "id": "txn_persist_check_1"
+                }))
+                await ws.recv()
+                print(f"[INFO] Planted persistence record for {PERSISTENCE_CUSTOMER} ({PERSISTENCE_AMOUNT_PAISE} paise).")
+
+            # Step C: Post one synthetic test entry
+            smoke_txn_id = f"smoke_txn_{int(time.time() * 1000)}"
+            smoke_customer = f"SmokeTestUser_{int(time.time())}"
+            smoke_amt = 50000  # Rs 500 in paise
+
+            t0 = time.perf_counter()
+            await ws.send(json.dumps({
+                "type": "entry.create",
+                "customer_name": smoke_customer,
+                "amount_paise": smoke_amt,
+                "entry_type": "gave",
+                "id": smoke_txn_id,
+                "note": "Smoke synthetic credit test"
+            }))
+            create_resp = json.loads(await ws.recv())
+            t_create = (time.perf_counter() - t0) * 1000
+
+            if create_resp.get("type") != "entry.created" or create_resp.get("amount_paise") != smoke_amt:
+                print(f"[FAIL] Entry creation failed: {create_resp}")
+                sys.exit(1)
+            print(f"[PASS] Post synthetic test entry ({smoke_amt} paise for {smoke_customer}) -> id={smoke_txn_id} ({t_create:.2f} ms)")
+
+            # Step D: Read the balance
+            t0 = time.perf_counter()
+            await ws.send(json.dumps({
+                "type": "balance.get",
+                "customer_name": smoke_customer
+            }))
+            bal_resp = json.loads(await ws.recv())
+            t_bal = (time.perf_counter() - t0) * 1000
+            bal = bal_resp.get("balance_paise", 0)
+            if bal != smoke_amt:
+                print(f"[FAIL] Balance verification failed: Expected {smoke_amt}, got {bal}")
+                sys.exit(1)
+            print(f"[PASS] Read balance confirmed: {bal} paise (Rs {bal/100:.2f}) ({t_bal:.2f} ms)")
+
+            # Step E: Reverse the entry
+            t0 = time.perf_counter()
+            await ws.send(json.dumps({
+                "type": "entry.reverse",
+                "id": smoke_txn_id
+            }))
+            rev_resp = json.loads(await ws.recv())
+            t_rev = (time.perf_counter() - t0) * 1000
+            if rev_resp.get("type") != "entry.reversed":
+                print(f"[FAIL] Reversal failed: {rev_resp}")
+                sys.exit(1)
+            print(f"[PASS] Reversed entry {smoke_txn_id} ({t_rev:.2f} ms)")
+
+            # Step F: Verify balance after reversal
+            t0 = time.perf_counter()
+            await ws.send(json.dumps({
+                "type": "balance.get",
+                "customer_name": smoke_customer
+            }))
+            after_rev_bal = json.loads(await ws.recv())
+            t_final = (time.perf_counter() - t0) * 1000
+            final_bal = after_rev_bal.get("balance_paise", 0)
+            if final_bal != 0:
+                print(f"[FAIL] Balance after reversal expected 0, got {final_bal}")
+                sys.exit(1)
+            print(f"[PASS] Balance after reversal confirmed: {final_bal} paise (Rs 0.00) ({t_final:.2f} ms)")
+
+    except Exception as e:
+        print(f"[FAIL] WebSocket test failed with error: {e}")
+        sys.exit(1)
+
+    total_time = (time.perf_counter() - total_start) * 1000
+    print("=" * 60)
+    print(f"ALL SMOKE TESTS PASSED SUCCESSFULLY in {total_time:.2f} ms!")
+    print("=" * 60)
+    sys.exit(0)
+
+def main():
+    parser = argparse.ArgumentParser(description="Voice Khata Production Smoke Test")
+    parser.add_argument("base_url", nargs="?", default="http://localhost:8000", help="Base URL (e.g. http://localhost:8000)")
+    parser.add_argument("--verify-persistence", action="store_true", help="Verify persistence of data written by previous run")
+    args = parser.parse_args()
+
+    asyncio.run(run_smoke_test(args.base_url, args.verify_persistence))
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

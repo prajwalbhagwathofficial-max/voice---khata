@@ -1,0 +1,32 @@
+{
+  "_comment": "Punjabi lexicon for voice parsing.",
+  "language": "pa",
+  "language_code": "pa-IN",
+  "language_name": "ਪੰਜਾਬੀ",
+  "numbers": {
+    "digits": {
+      "ਸਿਫ਼ਰ": 0, "ਇੱਕ": 1, "ਦੋ": 2, "ਤਿੰਨ": 3, "ਚਾਰ": 4,
+      "ਪੰਜ": 5, "ਛੇ": 6, "ਸੱਤ": 7, "ਅੱਠ": 8, "ਨੌਂ": 9
+    },
+    "teens": {
+      "ਦਸ": 10, "ਗਿਆਰਾਂ": 11, "ਬਾਰਾਂ": 12, "ਤੇਰਾਂ": 13, "ਚੌਦਾਂ": 14,
+      "ਪੰਦਰਾਂ": 15, "ਸੋਲਾਂ": 16, "ਸਤਾਰਾਂ": 17, "ਅਠਾਰਾਂ": 18, "ਉੱਨੀ": 19
+    },
+    "tens": {
+      "ਵੀਹ": 20, "ਤੀਹ": 30, "ਚਾਲੀ": 40, "ਪੰਜਾਹ": 50,
+      "ਸੱਠ": 60, "ਸੱਤਰ": 70, "ਅੱਸੀ": 80, "ਨੱਬੇ": 90
+    },
+    "multipliers": {
+      "ਸੌ": 100, "ਹਜ਼ਾਰ": 1000, "ਲੱਖ": 100000
+    },
+    "connectors": ["ate", "ਅਤੇ", "te", "ਤੇ"]
+  },
+  "credit_words": ["udhaar", "ਉਧਾਰ", "udhar", "baaki", "ਬਾਕੀ", "likho", "ਲਿਖੋ", "credit"],
+  "payment_words": ["ditte", "ਦਿੱਤੇ", "ditta", "ਦਿੱਤਾ", "jama", "ਜਮ੍ਹਾਂ", "modte", "ਮੋੜਤੇ", "payment", "paid"],
+  "dates": { "ajj": 0, "ਅੱਜ": 0, "kall": -1, "ਕੱਲ੍ਹ": -1 },
+  "negation": ["nahi", "naa", "ਨਹੀਂ"],
+  "confirmation": ["haan", "theek", "ਹਾਂ", "ਠੀਕ"],
+  "correction": ["galat", "ਗ਼ਲਤ"],
+  "query_words": ["kinna", "hisaab", "ਕਿੰਨਾ", "ਹਿਸਾਬ", "ਬਾਕੀ"],
+  "undo_words": ["hatao", "radd", "ਹਟਾਓ", "undo"]
+}

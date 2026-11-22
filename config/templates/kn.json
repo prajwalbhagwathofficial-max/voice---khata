@@ -1,0 +1,37 @@
+{
+  "_comment": "Kannada message templates. {name}, {amount}, {total}, {currency}, {days}, {shop} are placeholders.",
+  "language": "kn",
+  "language_name": "ಕನ್ನಡ",
+
+  "ai_disclosure": "ನಮಸ್ಕಾರ! ನಾನು {shop} ನ AI ಸಹಾಯಕ. ನಿಮ್ಮ ಖಾತೆಯ ಲೆಕ್ಕ ಇಡಲು ಸಹಾಯ ಮಾಡುತ್ತೇನೆ.",
+
+  "reminder_first": "ನಮಸ್ಕಾರ {name} ಅವರೇ, {shop} ಇಂದ. ನಿಮ್ಮ ₹{total} ಬಾಕಿ {days} ದಿನಗಳಿಂದ ಇದೆ. ದಯವಿಟ್ಟು ಪಾವತಿಸಿ. ಧನ್ಯವಾದಗಳು!",
+  "reminder_repeat": "ನಮಸ್ಕಾರ {name} ಅವರೇ, {shop} ಇಂದ ಜ್ಞಾಪನೆ. ನಿಮ್ಮ ₹{total} ಬಾಕಿ ಇನ್ನೂ ಇದೆ. ದಯವಿಟ್ಟು ಪಾವತಿಸಿ.",
+  "reminder_weekly_summary": "ನಮಸ್ಕಾರ {name} ಅವರೇ, {shop} ಇಂದ ವಾರದ ಸಾರಾಂಶ. ನಿಮ್ಮ ಒಟ್ಟು ಬಾಕಿ ₹{total}. ವಿವರಗಳಿಗೆ ಅಂಗಡಿಗೆ ಸಂಪರ್ಕಿಸಿ.",
+  "reminder_high_due": "ನಮಸ್ಕಾರ {name} ಅವರೇ, {shop} ಇಂದ. ನಿಮ್ಮ ಬಾಕಿ ₹{total} ಆಗಿದ್ದು ತುಂಬಾ ಹೆಚ್ಚಾಗಿದೆ. ದಯವಿಟ್ಟು ಬೇಗ ಪಾವತಿಸಿ.",
+  "thank_you": "ಧನ್ಯವಾದಗಳು {name} ಅವರೇ! {shop} ನಲ್ಲಿ ನಿಮ್ಮ ಎಲ್ಲ ಬಾಕಿ ತೀರಿಸಿದ್ದೀರಿ. ಮತ್ತೆ ಬನ್ನಿ!",
+
+  "credit_added": "{name} ಅವರೇ, ₹{amount} ಸಾಲ ಸೇರಿಸಲಾಗಿದೆ. ಒಟ್ಟು ಬಾಕಿ ₹{total}.",
+  "payment_received": "{name} ಅವರೇ, ₹{amount} ಪಾವತಿ ಸ್ವೀಕರಿಸಲಾಗಿದೆ. ಬಾಕಿ ₹{total}.",
+  "purchase_recorded": "{item} ₹{amount} ಖರೀದಿ ದಾಖಲಾಗಿದೆ. ಬಿಲ್ {billNumber} ಸಿದ್ಧವಾಗಿದೆ.",
+  "due_cleared": "{name} ಅವರೇ, ನಿಮ್ಮ ಬಾಕಿ ಪೂರ್ಣವಾಗಿ ತೀರಿದೆ! ಧನ್ಯವಾದಗಳು!",
+  "total_query": "{name} ಅವರ ಒಟ್ಟು ಬಾಕಿ ₹{total}.",
+  "today_summary": "ಇಂದಿನ ಒಟ್ಟು ಸಾಲ ₹{total}.",
+  "multiple_customers_found": "{count} ಗ್ರಾಹಕರು ಸಿಕ್ಕಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ಊರು ಅಥವಾ ಫೋನ್ ಸಂಖ್ಯೆಯಿಂದ ಆಯ್ಕೆ ಮಾಡಿ.",
+
+  "high_due_warning": "ಎಚ್ಚರಿಕೆ: {name} ಅವರ ಬಾಕಿ ₹{total}, ಮಿತಿ ಮೀರಿದೆ.",
+  "high_due_confirm": "{name} ಅವರ ಬಾಕಿ ಮಿತಿ ದಾಟಿದೆ. ಇನ್ನೂ ಸಾಲ ಕೊಡಬೇಕೆ?",
+  "distance_warning": "ನೀವು ಅಂಗಡಿಯಿಂದ ದೂರದಲ್ಲಿದ್ದೀರಿ. ಸರಿಯಾದ ಜಾಗದಿಂದ ಬಳಸಿ.",
+
+  "ask_which_customer": "ಹಲವು {name} ಸಿಕ್ಕಿದ್ದಾರೆ. ಯಾವ {name}?",
+  "ask_name": "ಹೊಸ ಗ್ರಾಹಕರ ಹೆಸರು ಹೇಳಿ.",
+  "ask_address": "ವಿಳಾಸ ಹೇಳಿ - ಕಾಲೊನಿ ಅಥವಾ ಊರು?",
+  "ask_phone": "ಫೋನ್ ನಂಬರ್ ಹೇಳಿ.",
+  "ask_whatsapp_consent": "WhatsApp ನಲ್ಲಿ ಜ್ಞಾಪನೆ ಕಳುಹಿಸಬಹುದೆ?",
+  "confirm_new_customer": "{name}, {city}. ₹{amount} ಸಾಲ. ಸರಿಯೇ?",
+
+  "error_no_name": "ದಯವಿಟ್ಟು ಗ್ರಾಹಕರ ಹೆಸರು ಹೇಳಿ.",
+  "error_no_amount": "ಎಷ್ಟು ರೂಪಾಯಿ? ದಯವಿಟ್ಟು ಮೊತ್ತ ಹೇಳಿ.",
+  "error_not_understood": "ಖಂಡಿತ, ಯಾರ ಸಾಲ ಅಥವಾ ಪಾವತಿ ಬರೆಯಬೇಕು ಹೇಳಿ.",
+  "error_invalid_phone": "ಸರಿಯಾದ ಫೋನ್ ನಂಬರ್ ಹೇಳಿ."
+}

@@ -1,1 +1,1 @@
-"""Voice Khata server package."""
+# Voice Khata Server Package

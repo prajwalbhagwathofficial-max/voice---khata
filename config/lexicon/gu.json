@@ -1,0 +1,34 @@
+{
+  "_comment": "Gujarati lexicon for voice parsing.",
+  "language": "gu",
+  "language_code": "gu-IN",
+  "language_name": "ગુજરાતી",
+  "numbers": {
+    "digits": {
+      "શૂન્ય": 0, "એક": 1, "બે": 2, "ત્રણ": 3, "ચાર": 4,
+      "પાંચ": 5, "છ": 6, "સાત": 7, "આઠ": 8, "નવ": 9,
+      "ek": 1, "be": 2, "tran": 3, "char": 4, "paanch": 5, "chha": 6, "saat": 7, "aath": 8, "nav": 9
+    },
+    "teens": {
+      "દસ": 10, "અગિયાર": 11, "બાર": 12, "તેર": 13, "ચૌદ": 14,
+      "પંદર": 15, "સોળ": 16, "સત્તર": 17, "અઢાર": 18, "ઓગણીસ": 19
+    },
+    "tens": {
+      "વીસ": 20, "ત્રીસ": 30, "ચાલીસ": 40, "પચાસ": 50,
+      "સાઠ": 60, "સિત્તેર": 70, "એંસી": 80, "નેવું": 90
+    },
+    "multipliers": {
+      "સો": 100, "હજાર": 1000, "લાખ": 100000,
+      "so": 100, "hajaar": 1000, "lakh": 100000
+    },
+    "connectors": ["ane", "અને"]
+  },
+  "credit_words": ["udhaar", "ઉધાર", "udhar", "baaki", "બાકી", "lakho", "લખો", "credit"],
+  "payment_words": ["aapya", "આપ્યા", "jama", "જમા", "chukavya", "ચૂકવ્યા", "payment", "paid"],
+  "dates": { "aaje": 0, "આજે": 0, "kaale": -1, "કાલે": -1 },
+  "negation": ["nathi", "na", "નથી", "ના"],
+  "confirmation": ["haa", "saru", "હા", "સારું"],
+  "correction": ["khotu", "badlo", "ખોટું", "બદલો"],
+  "query_words": ["ketla", "baaki", "hisaab", "કેટલા", "હિસાબ"],
+  "undo_words": ["hatao", "radd", "હટાવો", "રદ", "undo"]
+}

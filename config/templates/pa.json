@@ -1,0 +1,35 @@
+{
+  "_comment": "Punjabi message templates.",
+  "language": "pa",
+  "language_name": "ਪੰਜਾਬੀ",
+
+  "ai_disclosure": "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ {shop} ਦਾ AI ਸਹਾਇਕ ਹਾਂ। ਖਾਤੇ ਦਾ ਹਿਸਾਬ ਰੱਖਣ ਵਿੱਚ ਮਦਦ ਕਰਦਾ ਹਾਂ।",
+
+  "reminder_first": "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ {name} ਜੀ, {shop} ਵੱਲੋਂ। ਤੁਹਾਡਾ ₹{total} ਦਾ ਬਕਾਇਆ {days} ਦਿਨਾਂ ਤੋਂ ਬਾਕੀ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਜਲਦੀ ਭੁਗਤਾਨ ਕਰੋ। ਧੰਨਵਾਦ!",
+  "reminder_repeat": "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ {name} ਜੀ, {shop} ਵੱਲੋਂ ਯਾਦ ਦਿਵਾਉਣਾ ਹੈ। ਤੁਹਾਡਾ ₹{total} ਬਕਾਇਆ ਅਜੇ ਵੀ ਬਾਕੀ ਹੈ।",
+  "reminder_weekly_summary": "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ {name} ਜੀ, {shop} ਹਫ਼ਤਾਵਾਰੀ ਹਿਸਾਬ। ਕੁੱਲ ਬਕਾਇਆ ₹{total} ਹੈ। ਦੁਕਾਨ ਤੇ ਸੰਪਰਕ ਕਰੋ।",
+  "reminder_high_due": "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ {name} ਜੀ, {shop} ਵੱਲੋਂ। ਤੁਹਾਡਾ ਬਕਾਇਆ ₹{total} ਬਹੁਤ ਵੱਧ ਗਿਆ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਜਲਦੀ ਦਿਓ।",
+  "thank_you": "ਧੰਨਵਾਦ {name} ਜੀ! {shop} ਤੇ ਤੁਹਾਡਾ ਸਾਰਾ ਬਕਾਇਆ ਚੁਕਤਾ ਹੋ ਗਿਆ ਹੈ!",
+
+  "credit_added": "{name} ਜੀ, ₹{amount} ਉਧਾਰ ਜੋੜਿਆ ਗਿਆ। ਕੁੱਲ ਬਕਾਇਆ ₹{total}।",
+  "payment_received": "{name} ਜੀ, ₹{amount} ਦਾ ਭੁਗਤਾਨ ਮਿਲਿਆ। ਬਕਾਇਆ ₹{total}।",
+  "due_cleared": "{name} ਜੀ, ਤੁਹਾਡਾ ਹਿਸਾਬ ਪੂਰਾ ਸਾਫ਼ ਹੋ ਗਿਆ! ਧੰਨਵਾਦ!",
+  "total_query": "{name} ਜੀ ਦਾ ਕੁੱਲ ਬਕਾਇਆ ₹{total} ਹੈ।",
+  "today_summary": "ਅੱਜ ਦਾ ਕੁੱਲ ਉਧਾਰ ₹{total} ਹੈ।",
+
+  "high_due_warning": "ਚੇਤਾਵਨੀ: {name} ਜੀ ਦਾ ਬਕਾਇਆ ₹{total} ਹੱਦ ਤੋਂ ਵੱਧ ਹੈ।",
+  "high_due_confirm": "{name} ਜੀ ਦਾ ਬਕਾਇਆ ਹੱਦ ਪਾਰ ਕਰ ਗਿਆ ਹੈ। ਕੀ ਫਿਰ ਵੀ ਉਧਾਰ ਦੇਣਾ ਹੈ?",
+  "distance_warning": "ਤੁਸੀਂ ਦੁਕਾਨ ਤੋਂ ਦੂਰ ਹੋ।",
+
+  "ask_which_customer": "ਕਈ {name} ਮਿਲੇ। ਕਿਹੜੇ {name}?",
+  "ask_name": "ਨਵੇਂ ਗਾਹਕ ਦਾ ਨਾਮ ਦੱਸੋ।",
+  "ask_address": "ਪਤਾ ਦੱਸੋ।",
+  "ask_phone": "ਫ਼ੋਨ ਨੰਬਰ ਦੱਸੋ।",
+  "ask_whatsapp_consent": "ਕੀ WhatsApp ਤੇ ਯਾਦ ਦਿਵਾ ਸਕਦੇ ਹਾਂ?",
+  "confirm_new_customer": "{name}, {city}। ₹{amount} ਉਧਾਰ। ਠੀਕ ਹੈ?",
+
+  "error_no_name": "ਕਿਰਪਾ ਕਰਕੇ ਗਾਹਕ ਦਾ ਨਾਮ ਦੱਸੋ।",
+  "error_no_amount": "ਕਿੰਨੇ ਰੁਪਏ ਹਨ ਦੱਸੋ।",
+  "error_not_understood": "ਦੱਸੋ ਜੀ! ਕਿਸਦਾ ਹਿਸਾਬ ਦੇਖਣਾ ਹੈ ਜਾਂ ਉਧਾਰ ਲਿਖਣਾ ਹੈ?",
+  "error_invalid_phone": "ਸਹੀ ਫ਼ੋਨ ਨੰਬਰ ਦੱਸੋ।"
+}

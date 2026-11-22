@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>Voice Khata – Mera Kirana Store</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans (UI) & Kalam (Handwritten Tagline) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            hand: ['"Kalam"', 'cursive'],
+          },
+          colors: {
+            cream: '#FAF8F3',
+            brand: {
+              dark: '#0E5A27',
+              mid: '#136B30',
+              light: '#228B44',
+              deep: '#065724',
+            },
+            mint: {
+              50: '#ECF7E7',
+              100: '#E6F3DC',
+              200: '#DCF1D3',
+              300: '#D4EECF',
+              bar: '#E2F1E3',
+              divider: '#C5DAB4',
+              wave: '#8BD491',
+            },
+            card: {
+              pink: '#FDE4E4',
+              green: '#E6F4DC',
+              peach: '#FDEBD2',
+              lavender: '#ECE3FA',
+              pill: '#EFECE2',
+            },
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* Base smooth rendering and zero horizontal overflow */
+    html, body {
+      background-color: #FAF8F3;
+      color: #14281D;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Idle subtle breathing animation for waveform bars */
+    @keyframes waveIdle {
+      0%, 100% { transform: scaleY(1); opacity: 0.85; }
+      50% { transform: scaleY(0.84); opacity: 1; }
+    }
+
+    /* Active listening bounce animation for waveform bars */
+    @keyframes waveActive {
+      0%, 100% { transform: scaleY(0.45); }
+      50% { transform: scaleY(1.25); }
+    }
+
+    /* Concentric ripple pulse when microphone is listening */
+    @keyframes micPulseRing {
+      0% { transform: scale(0.96); opacity: 0.85; }
+      50% { transform: scale(1.08); opacity: 0.45; }
+      100% { transform: scale(0.96); opacity: 0.85; }
+    }
+
+    .wave-bar {
+      transform-origin: center;
+      animation: waveIdle 2.6s ease-in-out infinite;
+      transition: background-color 0.25s ease;
+    }
+
+    .listening .wave-bar {
+      animation: waveActive 0.55s ease-in-out infinite;
+      background-color: #16A34A;
+    }
+
+    .wave-delay-1 { animation-delay: 0.05s !important; }
+    .wave-delay-2 { animation-delay: 0.18s !important; }
+    .wave-delay-3 { animation-delay: 0.30s !important; }
+    .wave-delay-4 { animation-delay: 0.12s !important; }
+
+    .listening .mic-ring-outer {
+      animation: micPulseRing 1.3s ease-in-out infinite;
+    }
+
+    .listening .mic-ring-inner {
+      animation: micPulseRing 1.3s ease-in-out infinite 0.2s;
+    }
+
+    /* Subtle custom scrollbar for desktop panels */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D4E0CD;
+      border-radius: 9999px;
+    }
+
+    /* Modal entrance transition */
+    @keyframes modalPop {
+      from { opacity: 0; transform: translateY(14px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-animate {
+      animation: modalPop 0.2s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="font-sans bg-cream min-h-screen antialiased selection:bg-mint-200 selection:text-brand-dark">
+
+  <!-- =========================================================
+       DESKTOP FIXED LEFT SIDEBAR (>= 1024px)
+       ========================================================= -->
+  <aside class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 bg-[#F5F2E9] border-r border-[#E6E1D3] z-30">
+    <!-- Sidebar Branding -->
+    <div class="p-5 border-b border-[#E6E1D3]">
+      <div class="flex items-center gap-3">
+        <!-- Kirana Storefront SVG Icon -->
+        <div class="w-12 h-12 shrink-0" aria-hidden="true">
+          <svg viewBox="0 0 64 64" class="w-full h-full drop-shadow-sm" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Base shadow -->
+            <rect x="4" y="54" width="56" height="4" rx="2" fill="#8C4E1B" />
+            <!-- Wooden Building Body -->
+            <rect x="8" y="25" width="48" height="30" rx="2" fill="#A86026" stroke="#7A4013" stroke-width="1.5" />
+            <!-- Inner Cream Shop Wall -->
+            <rect x="11" y="28" width="42" height="25" fill="#E3B37B" />
+            <!-- Left Display Window -->
+            <rect x="13" y="31" width="23" height="20" rx="1.5" fill="#BCE3F5" stroke="#7A4013" stroke-width="1.5" />
+            <!-- Window Reflection -->
+            <path d="M15 33L22 33L15 41Z" fill="#E6F6FD" opacity="0.7" />
+            <!-- Jars inside window -->
+            <rect x="15" y="42" width="6" height="8" rx="1.5" fill="#F59E0B" />
+            <rect x="15.5" y="40.5" width="5" height="1.8" rx="0.8" fill="#B45309" />
+            <rect x="22.5" y="40" width="6.5" height="10" rx="1.5" fill="#EAB308" />
+            <rect x="23" y="38.5" width="5.5" height="1.8" rx="0.8" fill="#A16207" />
+            <rect x="30" y="44" width="4.5" height="6" rx="1" fill="#EF4444" />
+            <!-- Wooden Door on Right -->
+            <rect x="39" y="32" width="12" height="22" rx="1" fill="#703812" stroke="#53280B" stroke-width="1.2" />
+            <circle cx="42" cy="43" r="1.2" fill="#FACC15" />
+            <!-- Striped Awning -->
+            <path d="M10 12H54L58 24C58 26.5 55.8 28 53.5 28C51.2 28 49.5 26.5 49.5 24.5C49.5 26.5 47.6 28 45.2 28C42.8 28 41 26.5 41 24.5C41 26.5 39.2 28 36.8 28C34.4 28 32.5 26.5 32.5 24.5C32.5 26.5 30.6 28 28.2 28C25.8 28 24 26.5 24 24.5C24 26.5 22.1 28 19.7 28C17.3 28 15.5 26.5 15.5 24.5C15.5 26.5 13.5 28 11 28C8.5 28 6 26.5 6 24L10 12Z" fill="#C94A38" stroke="#993022" stroke-width="1.2" />
+            <!-- White Awning Stripes -->
+            <path d="M16.5 12H23.5L22.5 26.5C21 27.6 18 27.6 15.8 26.2L16.5 12Z" fill="#FFFDF8" />
+            <path d="M29 12H35.5L35.5 26.5C33.8 27.6 31 27.6 29 26.5L29 12Z" fill="#FFFDF8" />
+            <path d="M41.5 12H48L49.5 26.2C47.5 27.6 44.5 27.6 42.5 26.5L41.5 12Z" fill="#FFFDF8" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xl font-extrabold tracking-tight text-brand-dark leading-tight truncate">Voice Khata</h1>
+          <p class="store-name-display text-xs font-semibold text-[#184B32] truncate">Mera Kirana Store</p>
+        </div>
+      </div>
+
+      <!-- Sidebar Synced Pill -->
+      <button onclick="triggerSync()" class="sync-pill mt-4 w-full flex items-center justify-between px-3.5 py-2 rounded-full bg-[#DCF2D4] hover:bg-[#CEEAC4] active:scale-[0.98] transition text-brand-dark font-semibold text-sm">
+        <span class="flex items-center gap-2">
+          <span class="sync-dot w-2.5 h-2.5 rounded-full bg-[#16A34A]"></span>
+          <span class="sync-text">Synced</span>
+        </span>
+        <span class="text-[11px] font-medium text-brand-dark/70">Cloud OK</span>
+      </button>
+    </div>
+
+    <!-- Sidebar Navigation Links -->
+    <nav class="flex-1 p-4 space-y-2" aria-label="Sidebar Navigation">
+      <button onclick="switchTab('home')" data-nav="home" class="nav-btn-desktop w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition bg-mint-200 text-brand-dark">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3.172 3.293 11.88a1 1 0 0 0 .707 1.707H6v6.414A1.5 1.5 0 0 0 7.5 21.5h3v-5a1.5 1.5 0 0 1 3 0v5h3a1.5 1.5 0 0 0 1.5-1.5v-6.414h2a1 1 0 0 0 .707-1.707L12 3.172Z" />
+        </svg>
+        <span>Home</span>
+      </button>
+
+      <button onclick="switchTab('reports')" data-nav="reports" class="nav-btn-desktop w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold text-sm transition text-[#3F4A42] hover:bg-mint-100/60">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <path d="M6 19v-5" />
+          <path d="M12 19V9" />
+          <path d="M18 19V5" />
+        </svg>
+        <span>Reports</span>
+      </button>
+
+      <button onclick="switchTab('settings')" data-nav="settings" class="nav-btn-desktop w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold text-sm transition text-[#3F4A42] hover:bg-mint-100/60">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+        </svg>
+        <span>Settings</span>
+      </button>
+
+      <a href="/" class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition text-[#1a73e8] bg-blue-50 hover:bg-blue-100 border border-blue-200">
+        <span>📋 मुख्य लेजर (Full Ledger)</span>
+      </a>
+    </nav>
+
+    <!-- Sidebar Quick Info Footer -->
+    <div class="p-4 m-4 rounded-2xl bg-mint-100/80 border border-mint-divider/60">
+      <p class="text-xs font-bold text-brand-dark">Voice Tip</p>
+      <p class="text-[11px] text-[#285337] mt-1 leading-relaxed">
+        Mic dabayein aur bolein: <span class="font-semibold">"Ramesh ke ₹250 udhaar likho"</span>
+      </p>
+    </div>
+  </aside>
+
+  <!-- =========================================================
+       MAIN APP WRAPPER
+       Mobile: full-width single column matching mockup 1:1
+       Tablet: centered max-w-2xl layout
+       Desktop: offset by 256px sidebar, fluid 12-col dashboard
+       ========================================================= -->
+  <div class="lg:pl-64 min-h-screen flex flex-col pb-24 lg:pb-8">
+
+    <!-- =======================================================
+         MOBILE & TABLET HEADER BAR (< 1024px)
+         Exact match to the mockup
+         ======================================================= -->
+    <header class="lg:hidden sticky top-0 z-20 bg-cream/95 backdrop-blur-md">
+      <div class="max-w-2xl mx-auto px-4 sm:px-6 pt-3.5 pb-2.5 flex items-center justify-between gap-2">
+        <!-- Left: Storefront Icon + Title & Subtitle -->
+        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div class="w-12 h-11 sm:w-14 sm:h-12 shrink-0" aria-hidden="true">
+            <svg viewBox="0 0 64 58" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Ground Wooden Base -->
+              <rect x="3" y="51" width="58" height="4" rx="2" fill="#8C4E1B" />
+              <!-- Wooden Shop Frame -->
+              <rect x="7" y="22" width="50" height="30" rx="2" fill="#A86026" stroke="#7A4013" stroke-width="1.5" />
+              <!-- Inner Cream Wall -->
+              <rect x="10" y="25" width="44" height="25" fill="#E3B37B" />
+              <!-- Left Display Window -->
+              <rect x="12" y="28" width="24" height="20" rx="1.5" fill="#C4E7F7" stroke="#7A4013" stroke-width="1.5" />
+              <!-- Window Glare -->
+              <path d="M14 30H22L14 39Z" fill="#EDF9FE" opacity="0.8" />
+              <!-- Jars inside window -->
+              <rect x="14.5" y="39" width="6.5" height="8" rx="1.5" fill="#F59E0B" />
+              <rect x="15" y="37.4" width="5.5" height="1.8" rx="0.8" fill="#B45309" />
+              <rect x="22.5" y="37" width="7" height="10" rx="1.5" fill="#EAB308" />
+              <rect x="23" y="35.4" width="6" height="1.8" rx="0.8" fill="#A16207" />
+              <rect x="30.5" y="41" width="4.5" height="6" rx="1" fill="#EF4444" />
+              <!-- Wooden Door -->
+              <rect x="39" y="29" width="12.5" height="22" rx="1" fill="#6D3610" stroke="#4D2409" stroke-width="1.2" />
+              <circle cx="42" cy="40.5" r="1.2" fill="#FACC15" />
+              <!-- Red & White Striped Awning -->
+              <path d="M9 8H55L59 21C59 23.6 56.8 25.2 54.4 25.2C52 25.2 50.2 23.6 50.2 21.6C50.2 23.6 48.2 25.2 45.8 25.2C43.4 25.2 41.4 23.6 41.4 21.6C41.4 23.6 39.5 25.2 37 25.2C34.5 25.2 32.5 23.6 32.5 21.6C32.5 23.6 30.5 25.2 28.1 25.2C25.6 25.2 23.6 23.6 23.6 21.6C23.6 23.6 21.6 25.2 19.2 25.2C16.8 25.2 14.8 23.6 14.8 21.6C14.8 23.6 12.8 25.2 10.2 25.2C7.6 25.2 5 23.6 5 21L9 8Z" fill="#C94A38" stroke="#993022" stroke-width="1.3" />
+              <!-- White Stripes -->
+              <path d="M16 8H23.2L22.2 23.6C20.5 24.8 17.5 24.8 15.2 23.3L16 8Z" fill="#FFFDF8" />
+              <path d="M28.8 8H35.6L35.6 23.6C33.8 24.8 30.8 24.8 28.8 23.6L28.8 8Z" fill="#FFFDF8" />
+              <path d="M41.6 8H48.4L49.8 23.3C47.8 24.8 44.6 24.8 42.6 23.6L41.6 8Z" fill="#FFFDF8" />
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-[22px] sm:text-2xl font-extrabold tracking-tight text-brand-dark leading-none truncate">
+              Voice Khata
+            </h1>
+            <p class="store-name-display text-[13px] sm:text-sm font-semibold text-[#184B32] mt-1 leading-tight truncate">
+              Mera Kirana Store
+            </p>
+          </div>
+        </div>
+
+        <!-- Right: Synced Pill Badge -->
+        <button onclick="triggerSync()" class="sync-pill shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-[#DCF2D4] hover:bg-[#CEEAC4] active:scale-95 transition text-brand-dark font-bold text-xs sm:text-sm shadow-[0_1px_2px_rgba(14,90,39,0.06)]">
+          <span class="sync-dot w-2.5 h-2.5 rounded-full bg-[#16A34A]"></span>
+          <span class="sync-text">Synced</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- =======================================================
+         MAIN CONTENT CONTAINER
+         ======================================================= -->
+    <main class="flex-1 w-full max-w-2xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-1.5 lg:pt-7">
+
+      <!-- =====================================================
+           TAB 1: HOME VIEW
+           ===================================================== -->
+      <section id="view-home" class="tab-view">
+        <!-- Desktop Top Bar (only >= 1024px) -->
+        <div class="hidden lg:flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-2xl font-extrabold text-brand-dark">Namaste, Shopkeeper!</h2>
+            <p class="text-sm text-[#4B6354] mt-0.5">Aaj ka hisab-kitab aur voice khata dashboard</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span id="desktop-date-badge" class="px-3.5 py-2 rounded-xl bg-white border border-[#E6E1D3] text-xs font-semibold text-[#3C5243]"></span>
+            <button onclick="openModal('udhaar')" class="px-4 py-2 rounded-xl bg-brand-dark hover:bg-brand-mid text-white text-sm font-bold shadow-sm transition active:scale-95">
+              + Quick Entry
+            </button>
+          </div>
+        </div>
+
+        <!-- Responsive 12-Column Grid on Desktop, Single Column on Mobile/Tablet -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 lg:gap-6 items-start">
+
+          <!-- LEFT COLUMN ON DESKTOP (7 cols) / TOP FLOW ON MOBILE -->
+          <div class="lg:col-span-7 flex flex-col gap-3.5 sm:gap-4 lg:gap-5">
+
+            <!-- 1. HERO BANNER CARD (Wooden Grocery Shelves + Handwritten Tagline) -->
+            <div class="w-full rounded-[20px] overflow-hidden bg-gradient-to-r from-[#FBF2E2] via-[#FAF0DE] to-[#F9EFE0] border border-[#EFE2CC]/80 shadow-[0_2px_10px_rgba(140,95,40,0.06)] flex items-stretch">
+              <!-- Left (~55%): Detailed Custom SVG of Wooden Grocery Shelves with Jars -->
+              <div class="w-[56%] sm:w-[55%] shrink-0 flex items-end overflow-hidden bg-[#F7DEB4]">
+                <svg viewBox="0 0 260 155" class="w-full h-full object-cover" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Wooden grocery shelves stocked with colorful spice and grain jars">
+                  <!-- Warm Back Wall -->
+                  <rect width="260" height="155" fill="#FBE5BE" />
+                  <!-- Left Perspective Cabinet Side -->
+                  <polygon points="0,0 44,12 44,155 0,155" fill="#E3AC62" />
+                  <!-- Vertical Wooden Divider Pillars -->
+                  <rect x="42" y="0" width="9" height="155" fill="#C4833B" />
+                  <rect x="44" y="0" width="3" height="155" fill="#D99A4E" />
+
+                  <!-- TOP SHELF PLANK (Left side + Main) -->
+                  <polygon points="0,38 42,42 42,48 0,45" fill="#B5722B" />
+                  <rect x="51" y="42" width="209" height="7" rx="1" fill="#C4833B" />
+                  <rect x="51" y="42" width="209" height="2.5" fill="#DBA056" />
+
+                  <!-- MIDDLE SHELF PLANK 1 -->
+                  <polygon points="0,78 42,81 42,87 0,85" fill="#B5722B" />
+                  <rect x="51" y="81" width="209" height="7" rx="1" fill="#C4833B" />
+                  <rect x="51" y="81" width="209" height="2.5" fill="#DBA056" />
+
+                  <!-- MIDDLE SHELF PLANK 2 -->
+                  <polygon points="0,116 42,119 42,125 0,123" fill="#B5722B" />
+                  <rect x="51" y="119" width="209" height="7" rx="1" fill="#C4833B" />
+                  <rect x="51" y="119" width="209" height="2.5" fill="#DBA056" />
+
+                  <!-- BOTTOM BASE PLANK -->
+                  <rect x="0" y="150" width="260" height="5" fill="#B5722B" />
+
+                  <!-- ====== LEFT SIDE CUBBY JARS ====== -->
+                  <!-- Top Left -->
+                  <rect x="5" y="18" width="14" height="21" rx="3" fill="#4E8CC2" />
+                  <rect x="7" y="14" width="10" height="4" rx="1.5" fill="#D97706" />
+                  <rect x="7" y="24" width="10" height="8" rx="1" fill="#FDE68A" />
+                  <rect x="22" y="20" width="15" height="20" rx="3" fill="#63A375" />
+                  <rect x="24" y="16" width="11" height="4" rx="1.5" fill="#3B82F6" />
+                  <rect x="24" y="26" width="11" height="7" rx="1" fill="#FEF3C7" />
+                  <!-- Mid Left 1 -->
+                  <rect x="5" y="53" width="15" height="25" rx="3" fill="#F4D37E" />
+                  <rect x="7" y="49" width="11" height="4" rx="1.5" fill="#94A3B8" />
+                  <rect x="7" y="61" width="11" height="9" rx="1" fill="#FFFBEB" />
+                  <rect x="23" y="55" width="15" height="24" rx="3" fill="#E8C266" />
+                  <rect x="25" y="51" width="11" height="4" rx="1.5" fill="#64748B" />
+                  <rect x="25" y="63" width="11" height="8" rx="1" fill="#FEF9C3" />
+                  <!-- Mid Left 2 -->
+                  <rect x="6" y="92" width="14" height="24" rx="3" fill="#84B844" />
+                  <rect x="8" y="88" width="10" height="4" rx="1.5" fill="#15803D" />
+                  <circle cx="13" cy="104" r="3.5" fill="#FEF08A" />
+                  <rect x="23" y="93" width="15" height="23" rx="3" fill="#9BC94E" />
+                  <rect x="25" y="89" width="11" height="4" rx="1.5" fill="#166534" />
+                  <circle cx="30.5" cy="105" r="3.5" fill="#FDE047" />
+                  <!-- Bottom Left -->
+                  <rect x="6" y="130" width="14" height="20" rx="3" fill="#77AD3B" />
+                  <rect x="8" y="126" width="10" height="4" rx="1.5" fill="#15803D" />
+                  <rect x="23" y="130" width="15" height="20" rx="3" fill="#8EC449" />
+                  <rect x="25" y="126" width="11" height="4" rx="1.5" fill="#166534" />
+
+                  <!-- ====== MAIN SHELF ROW 1 (TOP) ====== -->
+                  <!-- Blue spice bottles -->
+                  <rect x="57" y="21" width="13" height="21" rx="3" fill="#3B82C4" />
+                  <rect x="59" y="17" width="9" height="4" rx="1.5" fill="#1D4ED8" />
+                  <circle cx="63.5" cy="31" r="3.5" fill="#FACC15" />
+
+                  <rect x="72" y="22" width="13" height="20" rx="3" fill="#4A90D9" />
+                  <rect x="74" y="18" width="9" height="4" rx="1.5" fill="#1E40AF" />
+                  <circle cx="78.5" cy="32" r="3.5" fill="#FDE047" />
+
+                  <!-- 3 Tall Grain/Lentil Glass Jars -->
+                  <g>
+                    <rect x="92" y="16" width="19" height="26" rx="4" fill="#F4D88B" stroke="#D1E4F0" stroke-width="1.5" />
+                    <rect x="94" y="12" width="15" height="4.5" rx="2" fill="#4B8CC9" />
+                    <circle cx="98" cy="24" r="1.3" fill="#D99B26" /><circle cx="103" cy="27" r="1.3" fill="#D99B26" /><circle cx="106" cy="23" r="1.3" fill="#D99B26" />
+                    <circle cx="99" cy="33" r="1.3" fill="#D99B26" /><circle cx="105" cy="35" r="1.3" fill="#D99B26" />
+                  </g>
+                  <g>
+                    <rect x="114" y="16" width="19" height="26" rx="4" fill="#F7E3A3" stroke="#D1E4F0" stroke-width="1.5" />
+                    <rect x="116" y="12" width="15" height="4.5" rx="2" fill="#4B8CC9" />
+                    <circle cx="120" cy="25" r="1.3" fill="#C98A1B" /><circle cx="125" cy="29" r="1.3" fill="#C98A1B" /><circle cx="128" cy="24" r="1.3" fill="#C98A1B" />
+                  </g>
+                  <g>
+                    <rect x="136" y="16" width="19" height="26" rx="4" fill="#F3C952" stroke="#D1E4F0" stroke-width="1.5" />
+                    <rect x="138" y="12" width="15" height="4.5" rx="2" fill="#4B8CC9" />
+                    <circle cx="143" cy="26" r="1.3" fill="#B45309" /><circle cx="148" cy="31" r="1.3" fill="#B45309" />
+                  </g>
+
+                  <!-- Honey / Ghee Warm Jars -->
+                  <rect x="166" y="14" width="22" height="28" rx="5" fill="#F5A623" />
+                  <rect x="169" y="10" width="16" height="4.5" rx="2" fill="#B45309" />
+                  <rect x="171" y="22" width="12" height="10" rx="2" fill="#FEF3C7" />
+
+                  <rect x="193" y="12" width="23" height="30" rx="5" fill="#F99B1C" />
+                  <rect x="196" y="8" width="17" height="4.5" rx="2" fill="#C2410C" />
+                  <ellipse cx="204.5" cy="26" rx="6.5" ry="5" fill="#FEF08A" />
+
+                  <rect x="220" y="18" width="17" height="24" rx="4" fill="#6AA8D9" />
+                  <rect x="222" y="14" width="13" height="4" rx="1.5" fill="#2563EB" />
+                  <rect x="223" y="25" width="11" height="8" rx="1.5" fill="#FDE68A" />
+
+                  <rect x="240" y="18" width="17" height="24" rx="4" fill="#F28533" />
+                  <rect x="242" y="14" width="13" height="4" rx="1.5" fill="#C2410C" />
+                  <rect x="243" y="25" width="11" height="8" rx="1.5" fill="#FEF3C7" />
+
+                  <!-- ====== MAIN SHELF ROW 2 (MIDDLE) ====== -->
+                  <!-- Tea / Masala Boxes -->
+                  <rect x="57" y="55" width="21" height="26" rx="2.5" fill="#88BE45" />
+                  <rect x="59" y="52" width="17" height="3.5" rx="1" fill="#4D7C0F" />
+                  <circle cx="67.5" cy="68" r="5" fill="#FEF9C3" />
+                  <path d="M67.5 64C69.5 66 69.5 70 67.5 72C65.5 70 65.5 66 67.5 64Z" fill="#16A34A" />
+
+                  <rect x="82" y="55" width="21" height="26" rx="2.5" fill="#E36038" />
+                  <rect x="84" y="52" width="17" height="3.5" rx="1" fill="#9A3412" />
+                  <rect x="87" y="63" width="11" height="9" rx="1.5" fill="#FDE68A" />
+
+                  <rect x="107" y="54" width="21" height="27" rx="2.5" fill="#E9D36B" />
+                  <rect x="109" y="51" width="17" height="3.5" rx="1" fill="#A16207" />
+                  <circle cx="117.5" cy="68" r="5" fill="#FFFBEB" />
+                  <path d="M117.5 64C119.5 66 119.5 70 117.5 72C115.5 70 115.5 66 117.5 64Z" fill="#65A30D" />
+
+                  <rect x="132" y="54" width="21" height="27" rx="2.5" fill="#F2CA52" />
+                  <rect x="134" y="51" width="17" height="3.5" rx="1" fill="#B45309" />
+                  <circle cx="142.5" cy="68" r="5" fill="#FFFBEB" />
+                  <path d="M142.5 64C144.5 66 144.5 70 142.5 72C140.5 70 140.5 66 142.5 64Z" fill="#65A30D" />
+
+                  <!-- Colorful Round Jars -->
+                  <rect x="160" y="53" width="22" height="28" rx="5" fill="#B8D43B" />
+                  <rect x="163" y="49" width="16" height="4.5" rx="2" fill="#4D7C0F" />
+                  <rect x="164" y="61" width="14" height="10" rx="2" fill="#FEF9C3" />
+
+                  <rect x="186" y="53" width="22" height="28" rx="5" fill="#9ACA3C" />
+                  <rect x="189" y="49" width="16" height="4.5" rx="2" fill="#3F6212" />
+                  <rect x="190" y="61" width="14" height="10" rx="2" fill="#FEF9C3" />
+
+                  <rect x="212" y="53" width="21" height="28" rx="5" fill="#4582C9" />
+                  <rect x="215" y="49" width="15" height="4.5" rx="2" fill="#1E40AF" />
+                  <ellipse cx="222.5" cy="67" rx="6" ry="4.5" fill="#FACC15" />
+
+                  <rect x="237" y="53" width="20" height="28" rx="5" fill="#E8C66D" />
+                  <rect x="240" y="49" width="14" height="4.5" rx="2" fill="#2563EB" />
+                  <rect x="240" y="61" width="14" height="10" rx="2" fill="#FFFBEB" />
+
+                  <!-- ====== MAIN SHELF ROW 3 (BOTTOM) ====== -->
+                  <!-- Large Pulse/Grain Jars -->
+                  <rect x="57" y="93" width="23" height="26" rx="5" fill="#E7C975" stroke="#D4E3EB" stroke-width="1.4" />
+                  <rect x="60" y="89" width="17" height="4.5" rx="2" fill="#65A30D" />
+                  <path d="M68.5 101C71.5 104 71.5 109 68.5 112C65.5 109 65.5 104 68.5 101Z" fill="#4D7C0F" />
+
+                  <rect x="84" y="93" width="23" height="26" rx="5" fill="#F2D791" stroke="#D4E3EB" stroke-width="1.4" />
+                  <rect x="87" y="89" width="17" height="4.5" rx="2" fill="#B45309" />
+                  <circle cx="95.5" cy="106" r="5" fill="#FFFBEB" opacity="0.7" />
+
+                  <rect x="111" y="93" width="22" height="26" rx="5" fill="#F4C142" stroke="#D4E3EB" stroke-width="1.4" />
+                  <rect x="114" y="89" width="16" height="4.5" rx="2" fill="#D97706" />
+
+                  <rect x="137" y="95" width="20" height="24" rx="4" fill="#E36D40" />
+                  <rect x="140" y="91" width="14" height="4.5" rx="2" fill="#9A3412" />
+                  <rect x="141" y="103" width="12" height="7" rx="1.5" fill="#FDE68A" />
+
+                  <rect x="162" y="97" width="19" height="22" rx="4" fill="#8EC044" />
+                  <rect x="165" y="93" width="13" height="4.5" rx="2" fill="#3F6212" />
+                  <rect x="166" y="104" width="11" height="7" rx="1.5" fill="#FEF08A" />
+
+                  <rect x="185" y="94" width="22" height="25" rx="5" fill="#F7A823" />
+                  <rect x="188" y="90" width="16" height="4.5" rx="2" fill="#C2410C" />
+                  <ellipse cx="196" cy="107" rx="6" ry="4.5" fill="#FEF9C3" />
+
+                  <rect x="211" y="94" width="22" height="25" rx="5" fill="#F0712B" />
+                  <rect x="214" y="90" width="16" height="4.5" rx="2" fill="#9A3412" />
+                  <ellipse cx="222" cy="107" rx="6" ry="4.5" fill="#FDE68A" />
+
+                  <rect x="237" y="94" width="20" height="25" rx="5" fill="#4681C6" />
+                  <rect x="240" y="90" width="14" height="4.5" rx="2" fill="#1E40AF" />
+                  <ellipse cx="247" cy="107" rx="5.5" ry="4" fill="#FACC15" />
+
+                  <!-- ====== EXTRA BOTTOM ROW PEEK ====== -->
+                  <rect x="57" y="131" width="24" height="19" rx="4" fill="#82B642" />
+                  <rect x="86" y="131" width="24" height="19" rx="4" fill="#F0B93E" />
+                  <rect x="115" y="131" width="24" height="19" rx="4" fill="#E36A3C" />
+                  <rect x="144" y="131" width="24" height="19" rx="4" fill="#4F8AC7" />
+                  <rect x="173" y="131" width="24" height="19" rx="4" fill="#F4A124" />
+                  <rect x="202" y="131" width="24" height="19" rx="4" fill="#97C948" />
+                  <rect x="231" y="131" width="24" height="19" rx="4" fill="#E87D36" />
+                </svg>
+              </div>
+
+              <!-- Right (~45%): Handwritten 3-Line Tagline + Green Curved Stroke -->
+              <div class="w-[44%] sm:w-[45%] flex flex-col items-center justify-center px-2.5 sm:px-4 py-3.5 sm:py-5 text-center">
+                <p class="font-hand text-[17px] min-[375px]:text-[19px] sm:text-2xl font-bold text-[#14251B] leading-[1.22] tracking-normal">
+                  Bolkar<br />
+                  apna khata<br />
+                  manage karein
+                </p>
+                <!-- Curved hand-drawn green underline SVG -->
+                <svg viewBox="0 0 120 14" class="w-24 sm:w-32 h-3.5 mt-1" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M4 10.5C34 3.5 76 1.8 116 4.5" stroke="#147A34" stroke-width="2.8" stroke-linecap="round" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- 2. DAILY SUMMARY CARD (Aaj ka Udhaar | Aaj ki Vasooli) -->
+            <div class="w-full rounded-[20px] bg-mint-100 px-3 sm:px-6 py-4 sm:py-5 shadow-[0_2px_8px_rgba(14,90,39,0.04)] grid grid-cols-2 items-center relative">
+              <!-- Thin Vertical Divider -->
+              <div class="absolute left-1/2 top-4 bottom-4 w-[1.5px] bg-mint-divider -translate-x-1/2" aria-hidden="true"></div>
+
+              <!-- Left Column: Aaj ka Udhaar -->
+              <button onclick="openModal('udhaar')" class="flex items-center justify-center sm:justify-start gap-2.5 sm:gap-4 pr-2 sm:pr-5 text-left group focus:outline-none">
+                <!-- 2-Person Outline Icon -->
+                <div class="w-9 h-9 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center text-brand-dark group-hover:scale-105 transition">
+                  <svg viewBox="0 0 36 36" class="w-full h-full" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="13.5" cy="12" r="4.5" />
+                    <path d="M5.5 26.5c0-4.2 3.6-7.5 8-7.5s8 3.3 8 7.5" />
+                    <circle cx="24" cy="13.5" r="3.5" />
+                    <path d="M22.5 19.2c3.5.4 6.5 3.1 6.5 6.8" />
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-[12px] min-[375px]:text-[13px] sm:text-sm font-semibold text-[#1B2B20] leading-tight truncate">
+                    Aaj ka Udhaar
+                  </p>
+                  <p id="stat-udhaar" class="text-[22px] min-[375px]:text-[25px] sm:text-[28px] font-extrabold text-brand-dark leading-tight mt-0.5 tracking-tight">
+                    ₹2,340
+                  </p>
+                </div>
+              </button>
+
+              <!-- Right Column: Aaj ki Vasooli -->
+              <button onclick="openModal('vasooli')" class="flex items-center justify-center sm:justify-start gap-2.5 sm:gap-4 pl-3 sm:pl-6 text-left group focus:outline-none">
+                <!-- Hand Holding Rupee Coin Outline Icon -->
+                <div class="w-9 h-9 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center text-brand-dark group-hover:scale-105 transition">
+                  <svg viewBox="0 0 36 36" class="w-full h-full" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                    <!-- Coin -->
+                    <circle cx="20.5" cy="11.5" r="6.2" />
+                    <!-- Rupee symbol inside coin -->
+                    <path d="M18.3 9.2h4.4M18.3 11.4h4.4M19.2 9.2c1.4 0 2.3.7 2.3 2s-.9 2-2.3 2l2.6 2.5" stroke-width="1.6" />
+                    <!-- Open Hand -->
+                    <path d="M5.5 23.5h5.2c1.1 0 2.1.4 2.9 1.1l1.2 1h5.8c1 0 1.8.8 1.8 1.7 0 .9-.8 1.7-1.8 1.7h-4.5" />
+                    <path d="M22.2 26.8l4.5-2.6c1-.6 2.2-.3 2.8.6.5.9.2 2.1-.7 2.7l-7.2 4.3c-1.4.8-3.1 1.1-4.7.8l-7.6-1.3c-.9-.2-1.8-.1-2.6.2H5.5v-8Z" />
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-[12px] min-[375px]:text-[13px] sm:text-sm font-semibold text-[#1B2B20] leading-tight truncate">
+                    Aaj ki Vasooli
+                  </p>
+                  <p id="stat-vasooli" class="text-[22px] min-[375px]:text-[25px] sm:text-[28px] font-extrabold text-brand-dark leading-tight mt-0.5 tracking-tight">
+                    ₹1,000
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            <!-- 3. CENTRAL VOICE ASSISTANT (Shown HERE on Mobile & Tablet < 1024px to match mockup 1:1) -->
+            <div id="voice-zone-mobile" class="lg:hidden py-2 sm:py-3 flex flex-col items-center justify-center">
+              <div id="voice-container-mobile" class="flex flex-col items-center w-full">
+                <!-- Mic + Flanking Waveforms Row -->
+                <div class="flex items-center justify-center gap-4 min-[375px]:gap-6 sm:gap-8">
+                  <!-- Left 4-bar Waveform -->
+                  <div class="flex items-center gap-1.5 sm:gap-2" aria-hidden="true">
+                    <span class="wave-bar wave-delay-1 w-[5px] sm:w-[6px] h-5 sm:h-6 rounded-full bg-mint-wave"></span>
+                    <span class="wave-bar wave-delay-2 w-[5px] sm:w-[6px] h-9 sm:h-11 rounded-full bg-mint-wave"></span>
+                    <span class="wave-bar wave-delay-3 w-[5px] sm:w-[6px] h-14 sm:h-16 rounded-full bg-mint-wave"></span>
+                    <span class="wave-bar wave-delay-4 w-[5px] sm:w-[6px] h-8 sm:h-10 rounded-full bg-mint-wave"></span>
+                  </div>
+
+                  <!-- Central Concentric Mic Button -->
+                  <button
+                    type="button"
+                    onclick="toggleVoiceListening()"
+                    aria-label="Bolkar kaam batayein - Start Voice Command"
+                    class="relative flex items-center justify-center w-[156px] h-[156px] min-[375px]:w-[172px] min-[375px]:h-[172px] sm:w-[188px] sm:h-[188px] rounded-full focus:outline-none group"
+                  >
+                    <!-- Outer Soft Ring -->
+                    <span class="mic-ring-outer absolute inset-0 rounded-full bg-mint-50 transition-transform duration-300 group-hover:scale-105"></span>
+                    <!-- Inner Soft Ring -->
+                    <span class="mic-ring-inner absolute inset-[11px] sm:inset-[13px] rounded-full bg-mint-300 transition-transform duration-300 group-hover:scale-[1.03]"></span>
+                    <!-- Deep Green Gradient Button -->
+                    <span class="relative z-10 flex items-center justify-center w-[118px] h-[118px] min-[375px]:w-[132px] min-[375px]:h-[132px] sm:w-[144px] sm:h-[144px] rounded-full bg-gradient-to-b from-[#228B44] via-[#127232] to-[#065724] shadow-[0_10px_24px_rgba(6,87,36,0.28)] group-active:scale-95 transition-transform">
+                      <!-- Crisp White Microphone SVG -->
+                      <svg viewBox="0 0 48 48" class="w-14 h-14 sm:w-16 sm:h-16 text-white" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="17" y="7" width="14" height="22" rx="7" fill="currentColor" />
+                        <path d="M11 22.5C11 29.68 16.82 35.5 24 35.5C31.18 35.5 37 29.68 37 22.5" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" />
+                        <path d="M24 35.5V42" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" />
+                        <path d="M17.5 42H30.5" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" />
+                      </svg>
+                    </span>
+                  </button>
+
+                  <!-- Right 4-bar Waveform (Mirror) -->
+                  <div class="flex items-center gap-1.5 sm:gap-2" aria-hidden="true">
+                    <span class="wave-bar wave-delay-4 w-[5px] sm:w-[6px] h-8 sm:h-10 rounded-full bg-mint-wave"></span>
+                    <span class="wave-bar wave-delay-3 w-[5px] sm:w-[6px] h-14 sm:h-16 rounded-full bg-mint-wave"></span>
+                    <span class="wave-bar wave-delay-2 w-[5px] sm:w-[6px] h-9 sm:h-11 rounded-full bg-mint-wave"></span>
+                    <span class="wave-bar wave-delay-1 w-[5px] sm:w-[6px] h-5 sm:h-6 rounded-full bg-mint-wave"></span>
+                  </div>
+                </div>
+
+                <!-- Pill Label Below Mic -->
+                <button
+                  type="button"
+                  onclick="toggleVoiceListening()"
+                  class="voice-status-pill mt-2.5 px-6 py-2 rounded-full bg-card-pill hover:bg-[#E7E3D5] text-[#17231B] text-[15px] sm:text-base font-semibold tracking-tight transition"
+                >
+                  Bolkar kaam batayein
+                </button>
+
+                <!-- Interactive Sample Hinglish Voice Chips (Appears smoothly when listening) -->
+                <div class="voice-chips-panel hidden mt-3 w-full max-w-md bg-white/90 border border-mint-divider rounded-2xl p-3 shadow-sm">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-brand-dark flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                      Sun raha hoon... (Tap a sample or speak)
+                    </span>
+                    <button onclick="stopVoiceListening()" class="text-xs font-semibold text-gray-500 hover:text-gray-800">Stop</button>
+                  </div>
+                  <p class="voice-transcript text-xs italic text-[#385340] mb-2 min-h-[16px]"></p>
+                  <div class="flex flex-wrap gap-1.5">
+                    <button onclick="processVoiceCommand('Ramesh ke ₹250 udhaar likho')" class="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-card-pink text-[#9E211D] hover:brightness-95 transition">
+                      "Ramesh ke ₹250 udhaar likho"
+                    </button>
+                    <button onclick="processVoiceCommand('Suresh se ₹500 mile')" class="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-card-green text-brand-dark hover:brightness-95 transition">
+                      "Suresh se ₹500 mile"
+                    </button>
+                    <button onclick="processVoiceCommand('Neha ka ₹180 bill banao')" class="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-card-peach text-[#A65B0D] hover:brightness-95 transition">
+                      "Neha ka ₹180 bill banao"
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. 2x2 QUICK ACTION GRID -->
+            <div class="grid grid-cols-2 gap-3 sm:gap-4">
+              <!-- Card 1: Udhaar Likho (Soft Pink) -->
+              <button
+                onclick="openModal('udhaar')"
+                class="rounded-[18px] bg-card-pink hover:brightness-[0.97] active:scale-[0.98] transition px-3.5 sm:px-5 py-4 sm:py-5 flex items-center gap-3 sm:gap-4 text-left shadow-[0_2px_6px_rgba(185,43,39,0.06)]"
+              >
+                <div class="w-10 h-10 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center text-[#B92B27]">
+                  <!-- Stacked Coins SVG -->
+                  <svg viewBox="0 0 40 40" class="w-full h-full" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                    <!-- Back right stack -->
+                    <ellipse cx="25" cy="12" rx="9" ry="4" />
+                    <path d="M16 12v5c0 2.2 4 4 9 4s9-1.8 9-4v-5" />
+                    <path d="M16 17v5c0 2.2 4 4 9 4s9-1.8 9-4v-5" />
+                    <path d="M25 26c5 0 9-1.8 9-4v-5" />
+                    <!-- Front left stack -->
+                    <ellipse cx="14.5" cy="21" rx="9" ry="4" fill="#FDE4E4" />
+                    <path d="M5.5 21v5c0 2.2 4 4 9 4s9-1.8 9-4v-5" fill="#FDE4E4" />
+                    <path d="M5.5 26v5c0 2.2 4 4 9 4s9-1.8 9-4v-5" />
+                    <ellipse cx="14.5" cy="21" rx="9" ry="4" />
+                  </svg>
+                </div>
+                <span class="text-[16px] min-[375px]:text-[17px] sm:text-lg font-extrabold text-[#141A15] leading-[1.2]">
+                  Udhaar<br />Likho
+                </span>
+              </button>
+
+              <!-- Card 2: Paise Mile (Soft Light Green) -->
+              <button
+                onclick="openModal('vasooli')"
+                class="rounded-[18px] bg-card-green hover:brightness-[0.97] active:scale-[0.98] transition px-3.5 sm:px-5 py-4 sm:py-5 flex items-center gap-3 sm:gap-4 text-left shadow-[0_2px_6px_rgba(20,106,43,0.06)]"
+              >
+                <div class="w-10 h-10 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center text-[#146A2B]">
+                  <!-- Hand Holding Rupee Coin SVG -->
+                  <svg viewBox="0 0 40 40" class="w-full h-full" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="22.5" cy="12" r="6.8" />
+                    <path d="M20 9.6h5M20 12h5M21 9.6c1.5 0 2.5.8 2.5 2.2S22.5 14 21 14l2.9 2.7" stroke-width="1.7" />
+                    <path d="M6 25.5h5.8c1.2 0 2.3.5 3.1 1.2l1.4 1.1h6.3c1.1 0 2 .9 2 1.9s-.9 1.9-2 1.9h-5" />
+                    <path d="M24.2 29.2l5-2.9c1.1-.6 2.5-.3 3.1.7.6 1 .2 2.3-.8 2.9l-7.9 4.7c-1.5.9-3.4 1.2-5.2.9l-8.4-1.4c-1-.2-2-.1-2.9.2H6v-8.8Z" />
+                  </svg>
+                </div>
+                <span class="text-[16px] min-[375px]:text-[17px] sm:text-lg font-extrabold text-[#141A15] leading-[1.2]">
+                  Paise<br />Mile
+                </span>
+              </button>
+
+              <!-- Card 3: Nayi Bikri (Bill) (Soft Peach) -->
+              <button
+                onclick="openModal('bill')"
+                class="rounded-[18px] bg-card-peach hover:brightness-[0.97] active:scale-[0.98] transition px-3.5 sm:px-5 py-4 sm:py-5 flex items-center gap-3 sm:gap-4 text-left shadow-[0_2px_6px_rgba(201,115,22,0.07)]"
+              >
+                <div class="w-10 h-10 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center text-[#C97316]">
+                  <!-- Shopping Cart SVG -->
+                  <svg viewBox="0 0 40 40" class="w-full h-full" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 9h4.5l4.2 17.5a2 2 0 0 0 2 1.5h14.5a2 2 0 0 0 1.9-1.4L35 15H11" />
+                    <circle cx="16" cy="33" r="2.2" />
+                    <circle cx="29" cy="33" r="2.2" />
+                  </svg>
+                </div>
+                <span class="text-[15px] min-[375px]:text-[16.5px] sm:text-lg font-extrabold text-[#141A15] leading-[1.2]">
+                  Nayi<br />Bikri (Bill)
+                </span>
+              </button>
+
+              <!-- Card 4: Customers (Soft Lavender) -->
+              <button
+                onclick="openModal('customers')"
+                class="rounded-[18px] bg-card-lavender hover:brightness-[0.97] active:scale-[0.98] transition px-3.5 sm:px-5 py-4 sm:py-5 flex items-center gap-3 sm:gap-4 text-left shadow-[0_2px_6px_rgba(59,40,168,0.06)]"
+              >
+                <div class="w-10 h-10 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center text-[#3B28A8]">
+                  <!-- 3-People Group SVG -->
+                  <svg viewBox="0 0 40 40" class="w-full h-full" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="20" cy="14" r="4.5" />
+                    <path d="M11.5 30c0-4.5 3.8-8 8.5-8s8.5 3.5 8.5 8Z" />
+                    <circle cx="9.5" cy="16.5" r="3.2" />
+                    <path d="M4 28.5c0-3.2 2.5-5.7 5.8-5.7 1 0 1.9.2 2.7.6" />
+                    <circle cx="30.5" cy="16.5" r="3.2" />
+                    <path d="M36 28.5c0-3.2-2.5-5.7-5.8-5.7-1 0-1.9.2-2.7.6" />
+                  </svg>
+                </div>
+                <span class="text-[15.5px] min-[375px]:text-[17px] sm:text-lg font-extrabold text-[#141A15] leading-[1.2] truncate">
+                  Customers
+                </span>
+              </button>
+            </div>
+
+            <!-- 5. FULL-WIDTH SECONDARY ACTION BAR (Puraana Hisab) -->
+            <button
+              onclick="openModal('history')"
+              class="w-full rounded-full bg-mint-bar hover:bg-[#D5EBD7] active:scale-[0.99] transition py-3.5 sm:py-4 px-5 flex items-center justify-center gap-2.5 shadow-[0_2px_6px_rgba(14,90,39,0.05)]"
+            >
+              <!-- History Clock-Arrow SVG -->
+              <svg viewBox="0 0 28 28" class="w-6 h-6 text-[#0E5438]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5.2 14A8.8 8.8 0 1 0 7.7 7.8L4.8 10.5" />
+                <path d="M4.8 6.2v4.3h4.3" />
+                <path d="M14 9.5v4.8l3.2 2" />
+              </svg>
+              <span class="text-[16px] sm:text-[17px] font-extrabold text-[#0E4A31] tracking-tight">
+                Puraana Hisab
+              </span>
+            </button>
+          </div>
+
+          <!-- ===================================================
+               RIGHT COLUMN ON DESKTOP (5 cols):
+               Dedicated Voice Assistant Focus Card + Recent Ledger
+               =================================================== -->
+          <div class="hidden lg:flex lg:col-span-5 flex-col gap-5">
+            <!-- Voice Assistant Focus Card -->
+            <div id="voice-container-desktop" class="rounded-[24px] bg-white border border-[#EAE5D7] p-6 shadow-[0_4px_20px_rgba(14,90,39,0.05)] flex flex-col items-center text-center">
+              <div class="w-full flex items-center justify-between mb-3">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-brand-dark/70">AI Voice Assistant</span>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-mint-100 text-brand-dark">Hinglish Ready</span>
+              </div>
+
+              <!-- Mic + Waveforms -->
+              <div class="flex items-center justify-center gap-6 my-3">
+                <div class="flex items-center gap-1.5" aria-hidden="true">
+                  <span class="wave-bar wave-delay-1 w-[6px] h-6 rounded-full bg-mint-wave"></span>
+                  <span class="wave-bar wave-delay-2 w-[6px] h-11 rounded-full bg-mint-wave"></span>
+                  <span class="wave-bar wave-delay-3 w-[6px] h-16 rounded-full bg-mint-wave"></span>
+                  <span class="wave-bar wave-delay-4 w-[6px] h-10 rounded-full bg-mint-wave"></span>
+                </div>
+
+                <button
+                  type="button"
+                  onclick="toggleVoiceListening()"
+                  aria-label="Bolkar kaam batayein"
+                  class="relative flex items-center justify-center w-[176px] h-[176px] rounded-full focus:outline-none group"
+                >
+                  <span class="mic-ring-outer absolute inset-0 rounded-full bg-mint-50 transition-transform duration-300 group-hover:scale-105"></span>
+                  <span class="mic-ring-inner absolute inset-[12px] rounded-full bg-mint-300 transition-transform duration-300 group-hover:scale-[1.03]"></span>
+                  <span class="relative z-10 flex items-center justify-center w-[134px] h-[134px] rounded-full bg-gradient-to-b from-[#228B44] via-[#127232] to-[#065724] shadow-[0_12px_26px_rgba(6,87,36,0.28)] group-active:scale-95 transition-transform">
+                    <svg viewBox="0 0 48 48" class="w-15 h-15 text-white" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="17" y="7" width="14" height="22" rx="7" fill="currentColor" />
+                      <path d="M11 22.5C11 29.68 16.82 35.5 24 35.5C31.18 35.5 37 29.68 37 22.5" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" />
+                      <path d="M24 35.5V42" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" />
+                      <path d="M17.5 42H30.5" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" />
+                    </svg>
+                  </span>
+                </button>
+
+                <div class="flex items-center gap-1.5" aria-hidden="true">
+                  <span class="wave-bar wave-delay-4 w-[6px] h-10 rounded-full bg-mint-wave"></span>
+                  <span class="wave-bar wave-delay-3 w-[6px] h-16 rounded-full bg-mint-wave"></span>
+                  <span class="wave-bar wave-delay-2 w-[6px] h-11 rounded-full bg-mint-wave"></span>
+                  <span class="wave-bar wave-delay-1 w-[6px] h-6 rounded-full bg-mint-wave"></span>
+                </div>
+              </div>
+
+              <!-- Pill Label -->
+              <button
+                type="button"
+                onclick="toggleVoiceListening()"
+                class="voice-status-pill mt-1 px-6 py-2 rounded-full bg-card-pill hover:bg-[#E7E3D5] text-[#17231B] text-base font-semibold transition"
+              >
+                Bolkar kaam batayein
+              </button>
+
+              <!-- Live Transcript + Quick Sample Hinglish Voice Commands -->
+              <p class="voice-transcript text-xs italic text-brand-dark mt-2 min-h-[16px]"></p>
+              <div class="w-full mt-3 pt-3 border-t border-[#F0ECE0]">
+                <p class="text-[11px] font-bold text-[#5D7263] uppercase tracking-wider mb-2">Try Voice Commands</p>
+                <div class="flex flex-wrap justify-center gap-1.5">
+                  <button onclick="processVoiceCommand('Ramesh ke ₹250 udhaar likho')" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-card-pink text-[#9E211D] hover:brightness-95 transition">
+                    "Ramesh ke ₹250 udhaar"
+                  </button>
+                  <button onclick="processVoiceCommand('Suresh se ₹500 mile')" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-card-green text-brand-dark hover:brightness-95 transition">
+                    "Suresh se ₹500 mile"
+                  </button>
+                  <button onclick="processVoiceCommand('Neha ka ₹180 bill banao')" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-card-peach text-[#A65B0D] hover:brightness-95 transition">
+                    "Neha ka ₹180 bill"
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Entries Mini Card (Desktop) -->
+            <div class="rounded-[24px] bg-white border border-[#EAE5D7] p-5 shadow-[0_4px_16px_rgba(14,90,39,0.04)]">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-extrabold text-brand-dark">Recent Khata Entries</h3>
+                <button onclick="openModal('history')" class="text-xs font-bold text-brand-mid hover:underline">View All</button>
+              </div>
+              <div id="desktop-recent-list" class="space-y-2.5">
+                <!-- Dynamically populated by JS -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- =====================================================
+           TAB 2: REPORTS VIEW
+           ===================================================== -->
+      <section id="view-reports" class="tab-view hidden space-y-5 pb-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-brand-dark">Hisab Reports</h2>
+            <p class="text-xs sm:text-sm text-[#4B6354]">Aaj ka summary aur pending udhaar overview</p>
+          </div>
+          <button onclick="copyDailyReport()" class="px-4 py-2 rounded-xl bg-mint-200 hover:bg-mint-300 text-brand-dark text-xs sm:text-sm font-bold transition active:scale-95">
+            Copy Summary
+          </button>
+        </div>
+
+        <!-- Summary Metric Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div class="rounded-2xl bg-card-pink p-4 border border-red-200/50">
+            <p class="text-xs font-bold text-[#9E211D]">Total Udhaar (Today)</p>
+            <p id="report-udhaar" class="text-2xl font-extrabold text-[#9E211D] mt-1">₹2,340</p>
+          </div>
+          <div class="rounded-2xl bg-card-green p-4 border border-green-200/60">
+            <p class="text-xs font-bold text-brand-dark">Total Vasooli (Today)</p>
+            <p id="report-vasooli" class="text-2xl font-extrabold text-brand-dark mt-1">₹1,000</p>
+          </div>
+          <div class="rounded-2xl bg-card-peach p-4 border border-amber-200/60">
+            <p class="text-xs font-bold text-[#9A5208]">Nayi Bikri (Cash Bills)</p>
+            <p id="report-bills" class="text-2xl font-extrabold text-[#9A5208] mt-1">₹640</p>
+          </div>
+        </div>
+
+        <!-- Visual Comparison Bar -->
+        <div class="rounded-2xl bg-white border border-[#EAE5D7] p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-extrabold text-brand-dark">Vasooli Ratio</h3>
+            <span id="report-ratio-text" class="text-xs font-bold text-brand-mid">43% recovered</span>
+          </div>
+          <div class="w-full h-4 rounded-full bg-card-pink overflow-hidden">
+            <div id="report-ratio-bar" class="h-full bg-gradient-to-r from-[#228B44] to-[#0E5A27] rounded-full transition-all duration-500" style="width: 43%;"></div>
+          </div>
+          <div class="flex justify-between text-xs font-semibold text-[#566C5D] mt-2">
+            <span>Vasooli Collected</span>
+            <span>Pending Udhaar</span>
+          </div>
+        </div>
+
+        <!-- Top Pending Customers -->
+        <div class="rounded-2xl bg-white border border-[#EAE5D7] p-5 shadow-sm">
+          <h3 class="text-sm font-extrabold text-brand-dark mb-3">Top Pending Udhaar</h3>
+          <div id="report-top-customers" class="space-y-2.5">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           TAB 3: SETTINGS VIEW
+           ===================================================== -->
+      <section id="view-settings" class="tab-view hidden space-y-5 pb-4">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-extrabold text-brand-dark">Store Settings</h2>
+          <p class="text-xs sm:text-sm text-[#4B6354]">Apne kirana store aur voice khata ko customize karein</p>
+        </div>
+
+        <div class="rounded-2xl bg-white border border-[#EAE5D7] p-5 shadow-sm space-y-4">
+          <div>
+            <label for="setting-store-name" class="block text-xs font-bold text-[#3B5243] mb-1.5">Dukaan ka Naam (Store Name)</label>
+            <input id="setting-store-name" type="text" value="Mera Kirana Store" class="w-full rounded-xl border border-[#DCE3D7] bg-cream/60 px-3.5 py-2.5 text-sm font-semibold text-[#14281D] focus:outline-none focus:ring-2 focus:ring-brand-mid" />
+          </div>
+
+          <div>
+            <label for="setting-voice-lang" class="block text-xs font-bold text-[#3B5243] mb-1.5">Voice Recognition Language</label>
+            <select id="setting-voice-lang" class="w-full rounded-xl border border-[#DCE3D7] bg-cream/60 px-3.5 py-2.5 text-sm font-semibold text-[#14281D] focus:outline-none focus:ring-2 focus:ring-brand-mid">
+              <option value="hi-IN" selected>Hinglish (Hindi + English)</option>
+              <option value="en-IN">Indian English</option>
+              <option value="mr-IN">Marathi</option>
+              <option value="kn-IN">Kannada</option>
+            </select>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-[#F0ECE0]">
+            <div>
+              <p class="text-sm font-bold text-[#182B1F]">Auto Cloud Sync</p>
+              <p class="text-xs text-[#5E7364]">Har entry ko automatic backup karein</p>
+            </div>
+            <button id="toggle-autosync" onclick="toggleSettingSwitch(this)" data-on="true" class="w-12 h-7 rounded-full bg-brand-light p-1 transition flex items-center justify-end">
+              <span class="w-5 h-5 rounded-full bg-white shadow"></span>
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-[#F0ECE0]">
+            <div>
+              <p class="text-sm font-bold text-[#182B1F]">WhatsApp Udhaar Reminders</p>
+              <p class="text-xs text-[#5E7364]">Customers ko payment link bhejein</p>
+            </div>
+            <button id="toggle-whatsapp" onclick="toggleSettingSwitch(this)" data-on="true" class="w-12 h-7 rounded-full bg-brand-light p-1 transition flex items-center justify-end">
+              <span class="w-5 h-5 rounded-full bg-white shadow"></span>
+            </button>
+          </div>
+
+          <div class="pt-3 flex flex-wrap gap-3">
+            <button onclick="saveSettings()" class="px-5 py-2.5 rounded-xl bg-brand-dark hover:bg-brand-mid text-white text-sm font-bold transition active:scale-95">
+              Save Changes
+            </button>
+            <button onclick="resetDemoData()" class="px-5 py-2.5 rounded-xl bg-card-pink text-[#9E211D] hover:brightness-95 text-sm font-bold transition active:scale-95">
+              Reset Demo Data
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- =========================================================
+       MOBILE & TABLET FIXED BOTTOM NAVIGATION BAR (< 1024px)
+       Matches mockup verbatim
+       ========================================================= -->
+  <nav class="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-[#FDFCF9]/95 backdrop-blur-md border-t border-[#E6E2D8]" aria-label="Bottom Navigation">
+    <div class="max-w-2xl mx-auto px-4 sm:px-8 py-2 grid grid-cols-3 items-center gap-2">
+      <!-- Home Tab -->
+      <button onclick="switchTab('home')" data-nav-mobile="home" class="nav-btn-mobile flex flex-col items-center justify-center py-1.5 px-4 rounded-full bg-mint-200 text-brand-dark transition">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3.172 3.293 11.88a1 1 0 0 0 .707 1.707H6v6.414A1.5 1.5 0 0 0 7.5 21.5h3v-5a1.5 1.5 0 0 1 3 0v5h3a1.5 1.5 0 0 0 1.5-1.5v-6.414h2a1 1 0 0 0 .707-1.707L12 3.172Z" />
+        </svg>
+        <span class="text-xs font-extrabold mt-0.5 leading-none">Home</span>
+      </button>
+
+      <!-- Reports Tab -->
+      <button onclick="switchTab('reports')" data-nav-mobile="reports" class="nav-btn-mobile flex flex-col items-center justify-center py-1.5 px-4 rounded-full text-[#3D4740] hover:bg-mint-100/60 transition">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M6.5 19v-5" />
+          <path d="M12 19V9" />
+          <path d="M17.5 19V5.5" />
+        </svg>
+        <span class="text-xs font-bold mt-0.5 leading-none">Reports</span>
+      </button>
+
+      <!-- Settings Tab -->
+      <button onclick="switchTab('settings')" data-nav-mobile="settings" class="nav-btn-mobile flex flex-col items-center justify-center py-1.5 px-4 rounded-full text-[#3D4740] hover:bg-mint-100/60 transition">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+        </svg>
+        <span class="text-xs font-bold mt-0.5 leading-none">Settings</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- =========================================================
+       UNIVERSAL INTERACTIVE MODAL DIALOG
+       Handles Udhaar Likho, Paise Mile, Nayi Bikri, Customers, Puraana Hisab
+       ========================================================= -->
+  <div id="modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="closeModalOnBackdrop(event)">
+    <div id="modal-card" class="modal-animate w-full sm:max-w-md bg-[#FAF8F3] rounded-t-[26px] sm:rounded-[24px] shadow-2xl border border-[#E6E1D3] overflow-hidden max-h-[88vh] flex flex-col">
+      <!-- Modal Header -->
+      <div class="px-5 py-4 bg-white border-b border-[#ECE8DC] flex items-center justify-between">
+        <h3 id="modal-title" class="text-lg font-extrabold text-brand-dark">Action</h3>
+        <button onclick="closeModal()" aria-label="Close modal" class="w-8 h-8 rounded-full bg-cream hover:bg-mint-100 flex items-center justify-center text-[#3D4E42] font-bold transition">
+          ✕
+        </button>
+      </div>
+      <!-- Modal Body -->
+      <div id="modal-body" class="p-5 overflow-y-auto space-y-4">
+        <!-- Dynamically rendered per action -->
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       TOAST NOTIFICATION BANNER (No alert() used!)
+       ========================================================= -->
+  <div id="toast-banner" class="fixed top-4 right-4 left-4 sm:left-auto sm:w-80 z-50 pointer-events-none opacity-0 -translate-y-3 transition-all duration-300">
+    <div class="rounded-2xl bg-[#0E5A27] text-white px-4 py-3 shadow-xl flex items-center gap-2.5 text-sm font-semibold">
+      <span class="w-2.5 h-2.5 rounded-full bg-[#86EFAC] shrink-0"></span>
+      <span id="toast-message">Updated successfully</span>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       APPLICATION LOGIC & INTERACTIVITY
+       ========================================================= -->
+  <script>
+    /**
+     * Voice Khata — Live Backend Connected Frontend (Zero Mock Data)
+     * Directly wired to Fastify REST/WebSocket server and Supabase Cloud.
+     */
+    const API_BASE = (window.location.protocol.startsWith('http') && window.location.port !== '5173')
+      ? window.location.origin
+      : 'http://127.0.0.1:3000';
+
+    // Live App State — populated directly from backend on startup
+    let state = {
+      storeName: 'Mera Kirana Store',
+      todayUdhaar: 0,
+      todayVasooli: 0,
+      todayBills: 0,
+      customers: [],
+      transactions: [],
+      settings: {},
+      isSynced: true,
+    };
+
+    let isListening = false;
+    let recognitionInstance = null;
+    let toastTimer = null;
+    let historyFilter = 'all';
+
+    // Format numbers in Indian Rupee style (e.g., ₹2,340)
+    function formatINR(num) {
+      return '₹' + Number(num || 0).toLocaleString('en-IN');
+    }
+
+    // Current time string (e.g., 10:24 AM)
+    function getCurrentTimeStr() {
+      return new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Show non-intrusive toast message
+    function showToast(msg) {
+      const banner = document.getElementById('toast-banner');
+      const textEl = document.getElementById('toast-message');
+      if (!banner || !textEl) return;
+      textEl.textContent = msg;
+      banner.classList.remove('opacity-0', '-translate-y-3');
+      banner.classList.add('opacity-100', 'translate-y-0');
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        banner.classList.add('opacity-0', '-translate-y-3');
+        banner.classList.remove('opacity-100', 'translate-y-0');
+      }, 3000);
+    }
+
+    // Update cloud sync badge UI
+    function updateSyncUI(isSynced, message = 'Cloud OK') {
+      state.isSynced = isSynced;
+      document.querySelectorAll('.sync-pill').forEach((pill) => {
+        const dot = pill.querySelector('.sync-dot');
+        const text = pill.querySelector('.sync-text');
+        if (isSynced) {
+          if (dot) {
+            dot.className = 'sync-dot w-2.5 h-2.5 rounded-full bg-[#16A34A]';
+          }
+          if (text) text.textContent = 'Synced';
+        } else {
+          if (dot) {
+            dot.className = 'sync-dot w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse';
+          }
+          if (text) text.textContent = 'Syncing...';
+        }
+      });
+    }
+
+    // Cross-script phonetic dictionary for accurate customer matching
+    const SCRIPT_EQUIVALENTS = {
+      pavan: ['पवन', 'पावन', 'pavan', 'pawan', 'pawankumar', 'pavana', 'ಪವನ್', 'பவன்', 'పవన్', 'avan', 'avanl', 'bhavan', 'अवन'],
+      ramesh: ['रमेश', 'ramesh', 'ramesha', 'umesh', 'amesh', 'ರಮೇಶ್', 'ரமேஷ்', 'రమేష్'],
+      suresh: ['सुरेश', 'suresh', 'suresha', 'sooresh', 'uresh', 'ಸುರೇಶ್', 'சுரேஷ்'],
+      nisarga: ['निसर्ग', 'निसर्गा', 'nisarga', 'nisharga', 'visarga', 'isarga', 'nisarg', 'ನಿಸರ್ಗ'],
+      manjunath: ['मंजूनाथ', 'manjunath', 'manjunatha', 'anjunath', 'manju', 'ಮಂಜುನಾಥ್'],
+      chethan: ['चेतन', 'chethan', 'chetan', 'cethan', 'jethan', 'ಚೇತನ್'],
+      venkatesh: ['वेंकटेश', 'venkatesh', 'venkat', 'venki', 'enkatesh', 'ವೆಂಕಟೇಶ್'],
+      basavaraj: ['बसंत', 'basavaraj', 'basava', 'asavaraj', 'ಬಸವರಾಜ್'],
+      shishir: ['शिशिर', 'shishir', 'sisir', 'shishira', 'ಶಿಶಿರ್'],
+    };
+
+    function normalizeName(str) {
+      if (!str) return '';
+      return str.toLowerCase().trim().replace(/[^\p{L}\p{N}]/gu, '');
+    }
+
+    function matchesCustomer(customerName, query) {
+      const cn = normalizeName(customerName);
+      const q = normalizeName(query);
+      if (!cn || !q) return false;
+      if (cn === q || cn.includes(q) || q.includes(cn)) return true;
+
+      for (const eq of Object.values(SCRIPT_EQUIVALENTS)) {
+        const hasCn = eq.some(e => normalizeName(e) === cn);
+        const hasQ = eq.some(e => normalizeName(e) === q);
+        if (hasCn && hasQ) return true;
+      }
+
+      if ((cn.endsWith(q) || q.endsWith(cn)) && Math.abs(cn.length - q.length) <= 2) {
+        return true;
+      }
+      return false;
+    }
+
+    function findMatchingCustomer(nameOrQuery) {
+      if (!nameOrQuery) return null;
+      return state.customers.find(c => matchesCustomer(c.name, nameOrQuery)) || null;
+    }
+
+    /**
+     * Fetch Live Data from Backend & Supabase Cloud (No Mock Data!)
+     */
+    async function fetchInitialData() {
+      updateSyncUI(false, 'Fetching...');
+
+      try {
+        // 1. Fetch store settings
+        const settingsRes = await fetch(`${API_BASE}/api/settings`).catch(() => null);
+        if (settingsRes && settingsRes.ok) {
+          const settingsData = await settingsRes.json();
+          state.settings = settingsData;
+          if (settingsData.shop?.name) {
+            state.storeName = settingsData.shop.name;
+          }
+        }
+
+        // 2. Fetch live data from Supabase Cloud via /api/sync/pull
+        const pullRes = await fetch(`${API_BASE}/api/sync/pull`).catch(() => null);
+        if (pullRes && pullRes.ok) {
+          const cloudData = await pullRes.json();
+
+          // Map customers from Supabase (using integer paise / decimal rupee safely)
+          state.customers = (cloudData.customers || []).map((c) => ({
+            id: c.id,
+            name: c.name || 'Grahak',
+            city: c.city || 'Kengeri',
+            phone: c.phoneEnc || c.phone || '',
+            balance: Number(c.totalDue || 0),
+            readableId: c.readableId || c.id,
+          }));
+
+          // Map transactions from Supabase
+          state.transactions = (cloudData.transactions || []).map((tx) => {
+            const cust = state.customers.find((c) => c.id === tx.customerId);
+            return {
+              id: tx.id,
+              type: tx.type === 'credit' ? 'udhaar' : tx.type === 'payment' ? 'vasooli' : 'bill',
+              customer: cust ? cust.name : (tx.customerId || 'Customer'),
+              amount: Number(tx.amount || 0),
+              note: tx.note || tx.voiceTranscript || (tx.type === 'credit' ? 'Udhaar' : tx.type === 'payment' ? 'Vasooli' : 'Nayi Bikri'),
+              time: tx.timestamp ? new Date(tx.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : getCurrentTimeStr(),
+              rawDate: tx.timestamp || tx.createdAt,
+            };
+          });
+
+          // Calculate today's real totals
+          const today = new Date().toDateString();
+          state.todayUdhaar = state.transactions
+            .filter((t) => t.type === 'udhaar' && new Date(t.rawDate).toDateString() === today)
+            .reduce((sum, t) => sum + t.amount, 0);
+
+          state.todayVasooli = state.transactions
+            .filter((t) => t.type === 'vasooli' && new Date(t.rawDate).toDateString() === today)
+            .reduce((sum, t) => sum + t.amount, 0);
+
+          state.todayBills = state.transactions
+            .filter((t) => t.type === 'bill' && new Date(t.rawDate).toDateString() === today)
+            .reduce((sum, t) => sum + t.amount, 0);
+
+          updateSyncUI(true, 'Cloud OK');
+        } else {
+          console.warn('Backend /api/sync/pull not reachable, operating offline.');
+          updateSyncUI(false, 'Offline');
+        }
+      } catch (err) {
+        console.error('Initial data fetch error:', err);
+        updateSyncUI(false, 'Offline');
+      }
+
+      renderAll();
+    }
+
+    /**
+     * Render UI components from live state
+     */
+    function renderAll() {
+      // Summary stats
+      const udhaarEl = document.getElementById('stat-udhaar');
+      const vasooliEl = document.getElementById('stat-vasooli');
+      if (udhaarEl) udhaarEl.textContent = formatINR(state.todayUdhaar);
+      if (vasooliEl) vasooliEl.textContent = formatINR(state.todayVasooli);
+
+      // Reports stats
+      const rUdhaar = document.getElementById('report-udhaar');
+      const rVasooli = document.getElementById('report-vasooli');
+      const rBills = document.getElementById('report-bills');
+      if (rUdhaar) rUdhaar.textContent = formatINR(state.todayUdhaar);
+      if (rVasooli) rVasooli.textContent = formatINR(state.todayVasooli);
+      if (rBills) rBills.textContent = formatINR(state.todayBills);
+
+      const totalFlow = state.todayUdhaar + state.todayVasooli;
+      const ratio = totalFlow > 0 ? Math.min(100, Math.round((state.todayVasooli / totalFlow) * 100)) : 0;
+      const ratioText = document.getElementById('report-ratio-text');
+      const ratioBar = document.getElementById('report-ratio-bar');
+      if (ratioText) ratioText.textContent = `${ratio}% recovered`;
+      if (ratioBar) ratioBar.style.width = `${ratio}%`;
+
+      // Store name displays
+      document.querySelectorAll('.store-name-display').forEach((el) => {
+        el.textContent = state.storeName;
+      });
+      const storeInput = document.getElementById('setting-store-name');
+      if (storeInput) storeInput.value = state.storeName;
+
+      // Desktop Recent Khata Entries
+      const recentEl = document.getElementById('desktop-recent-list');
+      if (recentEl) {
+        if (state.transactions.length === 0) {
+          recentEl.innerHTML = `<p class="text-xs text-[#5C7062] py-2">Koi entry nahi hai.</p>`;
+        } else {
+          recentEl.innerHTML = state.transactions
+            .slice(0, 4)
+            .map((tx) => {
+              const badgeMap = {
+                udhaar: { bg: 'bg-card-pink', text: 'text-[#B92B27]', label: 'Udhaar' },
+                vasooli: { bg: 'bg-card-green', text: 'text-brand-dark', label: 'Vasooli' },
+                bill: { bg: 'bg-card-peach', text: 'text-[#B45309]', label: 'Bill' },
+              };
+              const style = badgeMap[tx.type] || badgeMap.bill;
+              return `
+                <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-cream/80 border border-[#EFECE2]">
+                  <div class="min-w-0">
+                    <p class="text-xs font-extrabold text-[#16271C] truncate">${tx.customer}</p>
+                    <p class="text-[11px] text-[#5C7062] truncate">${tx.note} • ${tx.time}</p>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${style.bg} ${style.text}">
+                      ${formatINR(tx.amount)}
+                    </span>
+                  </div>
+                </div>
+              `;
+            })
+            .join('');
+        }
+      }
+
+      // Reports Top Pending Customers
+      const topEl = document.getElementById('report-top-customers');
+      if (topEl) {
+        const pending = [...state.customers].filter((c) => c.balance > 0).sort((a, b) => b.balance - a.balance);
+        if (pending.length === 0) {
+          topEl.innerHTML = `<p class="text-xs text-[#5E7364]">Koi pending udhaar nahi hai!</p>`;
+        } else {
+          topEl.innerHTML = pending
+            .map(
+              (c) => `
+              <div class="flex items-center justify-between p-3 rounded-xl bg-cream border border-[#EDE8DB]">
+                <div>
+                  <p class="text-sm font-bold text-[#14281D]">${c.name}</p>
+                  <p class="text-xs text-[#5D7263]">${c.phone || c.city || 'Store'}</p>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <span class="text-sm font-extrabold text-[#B92B27]">${formatINR(c.balance)}</span>
+                  <button onclick="openModal('vasooli', '${c.name}')" class="px-2.5 py-1 rounded-lg bg-card-green text-brand-dark text-xs font-bold hover:brightness-95">
+                    Collect
+                  </button>
+                  ${c.phone ? `<button onclick="sendWhatsAppReminder('${c.name}', '${c.phone}', ${c.balance})" class="px-2.5 py-1 rounded-lg bg-[#25D366]/20 text-[#128C7E] text-xs font-bold hover:brightness-95">WA</button>` : ''}
+                </div>
+              </div>
+            `
+            )
+            .join('');
+        }
+      }
+    }
+
+    /**
+     * Record a transaction and push to Supabase Cloud backend (No Mock Data!)
+     */
+    async function recordTransaction(type, customerName, amount, note) {
+      const cleanAmt = Math.max(0.5, Number(amount) || 0);
+      let customer = findMatchingCustomer(customerName);
+
+      // Create new customer if not found
+      if (!customer && type !== 'bill') {
+        const city = 'Kengeri';
+        const cleanName = customerName.toLowerCase().replace(/\s+/g, '_');
+        const phoneSuffix = Math.floor(1000 + Math.random() * 9000);
+        const newId = `${cleanName}_${city.toLowerCase()}_${phoneSuffix}`;
+
+        customer = {
+          id: newId,
+          name: customerName,
+          city,
+          phone: '',
+          balance: 0,
+          readableId: newId,
+        };
+        state.customers.unshift(customer);
+      }
+
+      // Update balances
+      if (type === 'udhaar' && customer) {
+        customer.balance += cleanAmt;
+        state.todayUdhaar += cleanAmt;
+      } else if (type === 'vasooli' && customer) {
+        customer.balance = Math.max(0, customer.balance - cleanAmt);
+        state.todayVasooli += cleanAmt;
+      } else if (type === 'bill') {
+        state.todayBills += cleanAmt;
+      }
+
+      // Local transaction object
+      const txnRecord = {
+        id: 'txn_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        type,
+        customer: customer ? customer.name : customerName,
+        amount: cleanAmt,
+        note: note || (type === 'udhaar' ? 'Kirana udhaar' : type === 'vasooli' ? 'Cash mila' : 'Nayi Bikri'),
+        time: getCurrentTimeStr(),
+        rawDate: new Date().toISOString(),
+      };
+      state.transactions.unshift(txnRecord);
+
+      // Render optimistic UI instantly
+      renderAll();
+
+      // Push to Supabase Cloud via /api/sync/push
+      const entries = [
+        {
+          id: 'sync_' + Date.now() + '_t',
+          entity: 'transaction',
+          op: 'create',
+          payload: {
+            id: txnRecord.id,
+            customerId: customer ? customer.id : 'walk_in',
+            type: type === 'udhaar' ? 'credit' : type === 'vasooli' ? 'payment' : 'purchase',
+            amount: cleanAmt,
+            timestamp: new Date().toISOString(),
+            note: txnRecord.note,
+            source: 'web',
+            voiceTranscript: txnRecord.note,
+            createdAt: new Date().toISOString(),
+          },
+        },
+      ];
+
+      if (customer) {
+        entries.push({
+          id: 'sync_' + Date.now() + '_c',
+          entity: 'customer',
+          op: 'update',
+          payload: {
+            id: customer.id,
+            name: customer.name,
+            city: customer.city || 'kengeri',
+            phoneEnc: customer.phone || '',
+            totalDue: customer.balance,
+            updatedAt: new Date().toISOString(),
+          },
+        });
+      }
+
+      try {
+        updateSyncUI(false);
+        const res = await fetch(`${API_BASE}/api/sync/push`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entries }),
+        });
+        if (res.ok) {
+          updateSyncUI(true, 'Cloud OK');
+        }
+      } catch (err) {
+        console.warn('Sync push to cloud failed (saved locally):', err);
+        updateSyncUI(false, 'Offline');
+      }
+    }
+
+    /**
+     * Real AI Voice Assistant via Groq LLM & Known Store Customers Roster
+     */
+    async function processVoiceCommand(rawText) {
+      const text = rawText.trim();
+      if (!text) return;
+
+      document.querySelectorAll('.voice-transcript').forEach((el) => {
+        el.textContent = `Processing: "${text}"...`;
+      });
+
+      try {
+        // Send to real server endpoint with Known Store Customers for 100% name accuracy
+        const resp = await fetch(`${API_BASE}/api/voice/extract`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transcript: text,
+            context: {
+              existingCustomers: state.customers.map((c) => ({
+                name: c.name,
+                city: c.city || '',
+                phoneLast4: (c.phone || '').slice(-4),
+              })),
+            },
+          }),
+        });
+
+        if (resp.ok) {
+          const data = await resp.json();
+          const intent = data.intent;
+          const targetName = data.customerName || 'Customer';
+          const amt = data.amount || 0;
+          const humanReply = data.humanReply || '';
+          const lang = data.rawLanguage || 'hi';
+
+          if (intent === 'credit' && amt > 0) {
+            await recordTransaction('udhaar', targetName, amt, text);
+            showToast(humanReply || `${targetName} के ₹${amt} उधार दर्ज!`);
+            speakResponse(humanReply, lang);
+          } else if (intent === 'payment' && amt > 0) {
+            await recordTransaction('vasooli', targetName, amt, text);
+            showToast(humanReply || `${targetName} से ₹${amt} वसूली दर्ज!`);
+            speakResponse(humanReply, lang);
+          } else if (intent === 'purchase' && amt > 0) {
+            await recordTransaction('bill', targetName, amt, data.item || 'Nayi Bikri');
+            showToast(humanReply || `${data.item || 'सामान'} का ₹${amt} नकद बिल बना!`);
+            speakResponse(humanReply, lang);
+          } else if (intent === 'query') {
+            const cust = findMatchingCustomer(targetName);
+            const queryMsg = cust
+              ? `${cust.name} जी का कुल बकाया ₹${cust.balance} है।`
+              : `${targetName} जी का खाता नहीं मिला।`;
+            showToast(queryMsg);
+            speakResponse(humanReply || queryMsg, lang);
+          } else {
+            showToast(humanReply || 'हाँ जी भाई साहब! बताइए किसका हिसाब देखना है?');
+            speakResponse(humanReply, lang);
+          }
+        }
+      } catch (err) {
+        console.error('Voice extraction error, using local fallback:', err);
+        // Robust regex fallback if network fails
+        const amountMatch = text.match(/(\d[\d,]*)/);
+        const amt = amountMatch ? parseInt(amountMatch[1].replace(/,/g, ''), 10) : 100;
+        const firstWord = text.split(/\s+/)[0].replace(/[^a-zA-Z\u0900-\u097F]/g, '') || 'Customer';
+        const matched = findMatchingCustomer(firstWord);
+        const finalName = matched ? matched.name : firstWord;
+
+        if (/mile|vasooli|jama|paid|diya/i.test(text)) {
+          recordTransaction('vasooli', finalName, amt, text);
+          showToast(`${finalName} से ₹${amt} वसूली दर्ज!`);
+        } else if (/bill|bikri|kharid/i.test(text)) {
+          recordTransaction('bill', finalName, amt, text);
+          showToast(`${finalName} का ₹${amt} बिल बना!`);
+        } else {
+          recordTransaction('udhaar', finalName, amt, text);
+          showToast(`${finalName} के ₹${amt} उधार दर्ज!`);
+        }
+      }
+
+      setTimeout(() => stopVoiceListening(), 800);
+    }
+
+    /**
+     * Natural speech synthesis playback
+     */
+    function speakResponse(text, lang = 'hi') {
+      if (!('speechSynthesis' in window) || !text) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      const langMap = { hi: 'hi-IN', kn: 'kn-IN', ta: 'ta-IN', te: 'te-IN', mr: 'mr-IN', en: 'en-IN' };
+      utterance.lang = langMap[lang] || 'hi-IN';
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    /**
+     * Voice Listening Controls
+     */
+    function toggleVoiceListening() {
+      if (isListening) {
+        stopVoiceListening();
+      } else {
+        startVoiceListening();
+      }
+    }
+
+    function startVoiceListening() {
+      isListening = true;
+      ['voice-container-mobile', 'voice-container-desktop'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('listening');
+      });
+
+      document.querySelectorAll('.voice-status-pill').forEach((el) => {
+        el.textContent = 'Sun raha hoon... Boliye';
+        el.classList.add('bg-mint-200', 'text-brand-dark');
+        el.classList.remove('bg-card-pill');
+      });
+
+      document.querySelectorAll('.voice-chips-panel').forEach((el) => el.classList.remove('hidden'));
+      document.querySelectorAll('.voice-transcript').forEach((el) => {
+        el.textContent = 'Listening for voice command...';
+      });
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          recognitionInstance = new SpeechRecognition();
+          const langSelect = document.getElementById('setting-voice-lang');
+          recognitionInstance.lang = langSelect ? langSelect.value : 'hi-IN';
+          recognitionInstance.interimResults = true;
+          recognitionInstance.maxAlternatives = 1;
+
+          recognitionInstance.onresult = (event) => {
+            const transcript = Array.from(event.results)
+              .map((r) => r[0].transcript)
+              .join('');
+            document.querySelectorAll('.voice-transcript').forEach((el) => {
+              el.textContent = `"${transcript}"`;
+            });
+            if (event.results[0].isFinal) {
+              processVoiceCommand(transcript);
+            }
+          };
+
+          recognitionInstance.onerror = () => {
+            document.querySelectorAll('.voice-transcript').forEach((el) => {
+              el.textContent = 'Mic listening or tap any sample command below!';
+            });
+          };
+
+          recognitionInstance.start();
+        } catch (err) {
+          document.querySelectorAll('.voice-transcript').forEach((el) => {
+            el.textContent = 'Tap any sample Hinglish command below!';
+          });
+        }
+      }
+    }
+
+    function stopVoiceListening() {
+      isListening = false;
+      if (recognitionInstance) {
+        try {
+          recognitionInstance.stop();
+        } catch (e) {}
+        recognitionInstance = null;
+      }
+
+      ['voice-container-mobile', 'voice-container-desktop'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('listening');
+      });
+
+      document.querySelectorAll('.voice-status-pill').forEach((el) => {
+        el.textContent = 'Bolkar kaam batayein';
+        el.classList.remove('bg-mint-200', 'text-brand-dark');
+        el.classList.add('bg-card-pill');
+      });
+
+      document.querySelectorAll('.voice-chips-panel').forEach((el) => el.classList.add('hidden'));
+    }
+
+    /**
+     * Trigger manual cloud sync pull & push
+     */
+    async function triggerSync() {
+      document.querySelectorAll('.sync-text').forEach((el) => (el.textContent = 'Syncing...'));
+      document.querySelectorAll('.sync-dot').forEach((el) => el.classList.add('animate-ping'));
+      await fetchInitialData();
+      showToast('Khata cloud ke saath sync ho gaya!');
+    }
+
+    /**
+     * Navigation Switcher (Home / Reports / Settings)
+     */
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-view').forEach((sec) => sec.classList.add('hidden'));
+      const activeView = document.getElementById(`view-${tabName}`);
+      if (activeView) activeView.classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn-desktop').forEach((btn) => {
+        const active = btn.dataset.nav === tabName;
+        btn.classList.toggle('bg-mint-200', active);
+        btn.classList.toggle('text-brand-dark', active);
+        btn.classList.toggle('font-bold', active);
+        btn.classList.toggle('text-[#3F4A42]', !active);
+        btn.classList.toggle('font-semibold', !active);
+      });
+
+      document.querySelectorAll('.nav-btn-mobile').forEach((btn) => {
+        const active = btn.dataset.navMobile === tabName;
+        btn.classList.toggle('bg-mint-200', active);
+        btn.classList.toggle('text-brand-dark', active);
+        btn.classList.toggle('text-[#3D4740]', !active);
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /**
+     * Modal Controller
+     */
+    function openModal(action, prefillCustomer = '') {
+      const backdrop = document.getElementById('modal-backdrop');
+      const titleEl = document.getElementById('modal-title');
+      const bodyEl = document.getElementById('modal-body');
+
+      const customerOptions = state.customers
+        .map((c) => `<option value="${c.name}">${c.name} (${c.city || 'Kengeri'}, Due: ${formatINR(c.balance)})</option>`)
+        .join('');
+
+      if (action === 'udhaar') {
+        titleEl.textContent = 'Udhaar Likho';
+        bodyEl.innerHTML = `
+          <form onsubmit="handleUdhaarSubmit(event)" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-bold text-[#3B5243] mb-1">Customer ka Naam</label>
+              <input id="inp-udhaar-name" list="customer-datalist" value="${prefillCustomer}" required placeholder="e.g., Pavan, Ramesh..." class="w-full rounded-xl border border-[#DCE3D7] bg-white px-3.5 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-mid" />
+              <datalist id="customer-datalist">${customerOptions}</datalist>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-[#3B5243] mb-1">Udhaar Amount (₹)</label>
+              <input id="inp-udhaar-amt" type="number" min="1" required placeholder="e.g., 250" class="w-full rounded-xl border border-[#DCE3D7] bg-white px-3.5 py-2.5 text-base font-extrabold text-[#B92B27] focus:outline-none focus:ring-2 focus:ring-[#B92B27]" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-[#3B5243] mb-1">Samaan / Note (Optional)</label>
+              <input id="inp-udhaar-note" type="text" placeholder="e.g., Aata, Dal, Chini" class="w-full rounded-xl border border-[#DCE3D7] bg-white px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-mid" />
+            </div>
+            <button type="submit" class="w-full py-3 rounded-xl bg-[#B92B27] hover:bg-[#9E211D] text-white font-extrabold text-sm shadow transition active:scale-[0.98]">
+              Save Udhaar Entry
+            </button>
+          </form>
+        `;
+      } else if (action === 'vasooli') {
+        titleEl.textContent = 'Paise Mile (Vasooli)';
+        bodyEl.innerHTML = `
+          <form onsubmit="handleVasooliSubmit(event)" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-bold text-[#3B5243] mb-1">Customer Select Karein</label>
+              <input id="inp-vasooli-name" list="customer-datalist-v" value="${prefillCustomer}" required placeholder="e.g., Pavan, Suresh..." class="w-full rounded-xl border border-[#DCE3D7] bg-white px-3.5 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-mid" />
+              <datalist id="customer-datalist-v">${customerOptions}</datalist>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-[#3B5243] mb-1">Kitne Paise Mile (₹)</label>
+              <input id="inp-vasooli-amt" type="number" min="1" required placeholder="e.g., 500" class="w-full rounded-xl border border-[#DCE3D7] bg-white px-3.5 py-2.5 text-base font-extrabold text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-mid" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-[#3B5243] mb-1">Payment Mode</label>
+              <select id="inp-vasooli-mode" class="w-full rounded-xl border border-[#DCE3D7] bg-white px-3.5 py-2.5 text-sm font-semibold">
+                <option value="Cash mila">Cash</option>
+                <option value="UPI / QR mila">UPI / QR</option>
+              </select>
+            </div>
+            <button type="submit" class="w-full py-3 rounded-xl bg-brand-dark hover:bg-brand-mid text-white font-extrabold text-sm shadow transition active:scale-[0.98]">
+              Confirm Paise Mile
+            </button>
+          </form>
+        `;
+      } else if (action === 'bill') {
+        titleEl.textContent = 'Nayi Bikri (Quick Bill)';
+        bodyEl.innerHTML = `
+          <form onsubmit="handleBillSubmit(event)" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-bold text-[#3B5243] mb-1">Quick Kirana Items (Tap to add)</label>
+              <div class="flex flex-wrap gap-1.5">
+                <button type="button" onclick="addQuickBillItem('Aata 5kg', 210)" class="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-card-peach text-[#9A5208]">+ Aata ₹210</button>
+                <button type="button" onclick="addQuickBillItem('Toor Dal 1kg', 165)" class="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-card-peach text-[#9A5208]">+ Dal ₹165</button>
+                <button type="button" onclick="addQuickBillItem('Mustard Oil 1L', 155)" class="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-card-peach text-[#9A5208]">+ Oil ₹155</button>
+                <button type="button" onclick="addQuickBillItem('Chini 1kg', 48)" class="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-card-peach text-[#9A5208]">+ Chini ₹48</button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-[#3B5243] mb-1">Items Summary</label>
+              <input id="inp-bill-note" type="text" required placeholder="e.g., Aata 5kg, Chini 1kg" class="w-full rounded-xl border border-[#DCE3D7] bg-white px-3.5 py-2.5 text-sm font-semibold" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-[#3B5243] mb-1">Total Bill (₹)</label>
+                <input id="inp-bill-amt" type="number" min="1" required placeholder="0" class="w-full rounded-xl border border-[#DCE3D7] bg-white px-3.5 py-2.5 text-base font-extrabold text-[#C97316]" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-[#3B5243] mb-1">Customer</label>
+                <input id="inp-bill-cust" type="text" value="Walk-in Customer" class="w-full rounded-xl border border-[#DCE3D7] bg-white px-3.5 py-2.5 text-sm font-semibold" />
+              </div>
+            </div>
+            <button type="submit" class="w-full py-3 rounded-xl bg-[#C97316] hover:bg-[#AE6110] text-white font-extrabold text-sm shadow transition active:scale-[0.98]">
+              Generate & Save Bill
+            </button>
+          </form>
+        `;
+      } else if (action === 'customers') {
+        titleEl.textContent = 'Customers Directory';
+        renderCustomersModal(bodyEl);
+      } else if (action === 'history') {
+        titleEl.textContent = 'Puraana Hisab (Ledger)';
+        historyFilter = 'all';
+        renderHistoryModal(bodyEl);
+      }
+
+      backdrop.classList.remove('hidden');
+    }
+
+    function addQuickBillItem(label, price) {
+      const noteEl = document.getElementById('inp-bill-note');
+      const amtEl = document.getElementById('inp-bill-amt');
+      noteEl.value = noteEl.value ? `${noteEl.value}, ${label}` : label;
+      amtEl.value = (parseInt(amtEl.value, 10) || 0) + price;
+    }
+
+    async function handleUdhaarSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('inp-udhaar-name').value.trim();
+      const amt = parseInt(document.getElementById('inp-udhaar-amt').value, 10);
+      const note = document.getElementById('inp-udhaar-note').value.trim() || 'Kirana udhaar';
+      await recordTransaction('udhaar', name, amt, note);
+      closeModal();
+      showToast(`${name} के ${formatINR(amt)} उधार दर्ज!`);
+    }
+
+    async function handleVasooliSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('inp-vasooli-name').value.trim();
+      const amt = parseInt(document.getElementById('inp-vasooli-amt').value, 10);
+      const mode = document.getElementById('inp-vasooli-mode').value;
+      await recordTransaction('vasooli', name, amt, mode);
+      closeModal();
+      showToast(`${name} से ${formatINR(amt)} वसूली सेव हुई!`);
+    }
+
+    async function handleBillSubmit(e) {
+      e.preventDefault();
+      const cust = document.getElementById('inp-bill-cust').value.trim() || 'Walk-in Customer';
+      const amt = parseInt(document.getElementById('inp-bill-amt').value, 10);
+      const note = document.getElementById('inp-bill-note').value.trim();
+      await recordTransaction('bill', cust, amt, note);
+      closeModal();
+      showToast(`नकद बिक्री ${formatINR(amt)} बिल सेव हुआ!`);
+    }
+
+    function sendWhatsAppReminder(name, phone, balance) {
+      const cleanPhone = (phone || '').replace(/\D/g, '');
+      const num = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
+      const text = encodeURIComponent(`नमस्ते ${name} जी! ${state.storeName} से आपका कुल बकाया ₹${balance} है। कृपया जल्द भुगतान करें। धन्यवाद!`);
+      const url = num ? `https://wa.me/${num}?text=${text}` : `https://wa.me/?text=${text}`;
+      window.open(url, '_blank');
+    }
+
+    function renderCustomersModal(container, query = '') {
+      const filtered = state.customers.filter((c) =>
+        matchesCustomer(c.name, query) || (c.phone && c.phone.includes(query))
+      );
+
+      container.innerHTML = `
+        <div class="flex items-center gap-2 mb-3">
+          <input type="search" value="${query}" oninput="renderCustomersModal(document.getElementById('modal-body'), this.value)" placeholder="Grahak khojein..." class="flex-1 rounded-xl border border-[#DCE3D7] bg-white px-3.5 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-mid" />
+          <button onclick="promptNewCustomer()" class="px-3.5 py-2.5 rounded-xl bg-brand-dark text-white text-xs font-bold shrink-0 hover:bg-brand-mid">
+            + Naya
+          </button>
+        </div>
+        <div class="space-y-2.5 max-h-[52vh] overflow-y-auto pr-1">
+          ${
+            filtered.length === 0
+              ? `<p class="text-xs text-[#5D7263] p-3 text-center">Koi grahak nahi mila.</p>`
+              : filtered
+                  .map(
+                    (c) => `
+              <div class="p-3 rounded-2xl bg-white border border-[#EAE5D7] flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="text-sm font-extrabold text-[#16271C] truncate">${c.name}</p>
+                  <p class="text-xs text-[#5E7364] truncate">${c.city || 'Kengeri'} ${c.phone ? '• ' + c.phone : ''}</p>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span class="text-sm font-extrabold ${c.balance > 0 ? 'text-[#B92B27]' : 'text-brand-dark'} mr-1">
+                    ${c.balance > 0 ? formatINR(c.balance) : 'Clear'}
+                  </span>
+                  <button onclick="openModal('udhaar', '${c.name}')" class="px-2 py-1 rounded-lg bg-card-pink text-[#B92B27] text-xs font-bold">+Udhaar</button>
+                  <button onclick="openModal('vasooli', '${c.name}')" class="px-2 py-1 rounded-lg bg-card-green text-brand-dark text-xs font-bold">Mile</button>
+                  ${
+                    c.balance > 0
+                      ? `<button onclick="sendWhatsAppReminder('${c.name}', '${c.phone}', ${c.balance})" title="WhatsApp Reminder" class="px-2 py-1 rounded-lg bg-[#25D366]/20 text-[#128C7E] text-xs font-bold">WA</button>`
+                      : ''
+                  }
+                </div>
+              </div>
+            `
+                  )
+                  .join('')
+          }
+        </div>
+      `;
+    }
+
+    async function promptNewCustomer() {
+      const name = prompt('Grahak ka naam daliye:');
+      if (!name || !name.trim()) return;
+      const city = prompt('Grahak ka shahar / area:', 'Kengeri') || 'Kengeri';
+      const phone = prompt('Mobile number (Optional):', '') || '';
+
+      const cleanName = name.trim().toLowerCase().replace(/\s+/g, '_');
+      const phoneDigits = phone.replace(/\D/g, '').slice(-4) || Math.floor(1000 + Math.random() * 9000);
+      const newId = `${cleanName}_${city.toLowerCase()}_${phoneDigits}`;
+
+      const newCust = {
+        id: newId,
+        name: name.trim(),
+        city: city.trim(),
+        phone: phone.trim(),
+        balance: 0,
+        readableId: newId,
+      };
+
+      state.customers.unshift(newCust);
+      renderAll();
+      renderCustomersModal(document.getElementById('modal-body'));
+
+      try {
+        await fetch(`${API_BASE}/api/sync/push`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entries: [
+              {
+                id: 'sync_' + Date.now() + '_c',
+                entity: 'customer',
+                op: 'create',
+                payload: {
+                  id: newCust.id,
+                  name: newCust.name,
+                  city: newCust.city,
+                  phoneEnc: newCust.phone,
+                  totalDue: 0,
+                  updatedAt: new Date().toISOString(),
+                },
+              },
+            ],
+          }),
+        });
+        showToast(`${newCust.name} ka khata khul gaya!`);
+      } catch (err) {
+        showToast(`${newCust.name} locally add ho gaya.`);
+      }
+    }
+
+    function renderHistoryModal(container) {
+      const items =
+        historyFilter === 'all'
+          ? state.transactions
+          : state.transactions.filter((t) => t.type === historyFilter);
+
+      const pillCls = (f) =>
+        historyFilter === f
+          ? 'bg-brand-dark text-white'
+          : 'bg-white text-[#3F5245] border border-[#DCE3D7]';
+
+      container.innerHTML = `
+        <div class="flex gap-1.5 flex-wrap">
+          <button onclick="setHistoryFilter('all')" class="px-3 py-1 rounded-full text-xs font-bold ${pillCls('all')}">All (${state.transactions.length})</button>
+          <button onclick="setHistoryFilter('udhaar')" class="px-3 py-1 rounded-full text-xs font-bold ${pillCls('udhaar')}">Udhaar</button>
+          <button onclick="setHistoryFilter('vasooli')" class="px-3 py-1 rounded-full text-xs font-bold ${pillCls('vasooli')}">Vasooli</button>
+          <button onclick="setHistoryFilter('bill')" class="px-3 py-1 rounded-full text-xs font-bold ${pillCls('bill')}">Bills</button>
+        </div>
+        <div class="space-y-2.5 max-h-[52vh] overflow-y-auto pr-1">
+          ${
+            items.length === 0
+              ? `<p class="text-xs text-[#5D7263] p-3 text-center">Koi hisab nahi mila.</p>`
+              : items
+                  .map((tx) => {
+                    const color =
+                      tx.type === 'udhaar'
+                        ? 'bg-card-pink text-[#B92B27]'
+                        : tx.type === 'vasooli'
+                        ? 'bg-card-green text-brand-dark'
+                        : 'bg-card-peach text-[#B45309]';
+                    return `
+                      <div class="p-3 rounded-2xl bg-white border border-[#EAE5D7] flex items-center justify-between gap-2">
+                        <div class="min-w-0">
+                          <p class="text-sm font-extrabold text-[#16271C] truncate">${tx.customer}</p>
+                          <p class="text-xs text-[#5E7364] truncate">${tx.note} • ${tx.time}</p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-extrabold shrink-0 ${color}">
+                          ${formatINR(tx.amount)}
+                        </span>
+                      </div>
+                    `;
+                  })
+                  .join('')
+          }
+        </div>
+      `;
+    }
+
+    function setHistoryFilter(filter) {
+      historyFilter = filter;
+      renderHistoryModal(document.getElementById('modal-body'));
+    }
+
+    function closeModal() {
+      const backdrop = document.getElementById('modal-backdrop');
+      if (backdrop) backdrop.classList.add('hidden');
+    }
+
+    function closeModalOnBackdrop(e) {
+      if (e.target.id === 'modal-backdrop') closeModal();
+    }
+
+    function toggleSettingSwitch(btn) {
+      const isOn = btn.dataset.on === 'true';
+      btn.dataset.on = (!isOn).toString();
+      btn.classList.toggle('bg-brand-light', !isOn);
+      btn.classList.toggle('bg-gray-300', isOn);
+      btn.classList.toggle('justify-end', !isOn);
+      btn.classList.toggle('justify-start', isOn);
+    }
+
+    async function saveSettings() {
+      const val = document.getElementById('setting-store-name').value.trim();
+      if (val) state.storeName = val;
+      renderAll();
+      showToast('Store settings save ho gayi!');
+    }
+
+    function copyDailyReport() {
+      const summary = `${state.storeName} - Daily Khata Summary\nAaj ka Udhaar: ${formatINR(state.todayUdhaar)}\nAaj ki Vasooli: ${formatINR(state.todayVasooli)}\nNayi Bikri: ${formatINR(state.todayBills)}`;
+      const temp = document.createElement('textarea');
+      temp.value = summary;
+      document.body.appendChild(temp);
+      temp.select();
+      try {
+        document.execCommand('copy');
+        showToast('Daily report clipboard par copy ho gaya!');
+      } catch (e) {
+        showToast('Report copy nahi ho saka.');
+      }
+      document.body.removeChild(temp);
+    }
+
+    // Initialize real connection on load
+    window.addEventListener('DOMContentLoaded', () => {
+      const dateBadge = document.getElementById('desktop-date-badge');
+      if (dateBadge) {
+        dateBadge.textContent = new Date().toLocaleDateString('en-IN', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        });
+      }
+      fetchInitialData();
+    });
+  </script>
+</body>
+</html>

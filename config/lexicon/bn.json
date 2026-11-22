@@ -1,0 +1,32 @@
+{
+  "_comment": "Bengali lexicon for voice parsing.",
+  "language": "bn",
+  "language_code": "bn-IN",
+  "language_name": "বাংলা",
+  "numbers": {
+    "digits": {
+      "শূন্য": 0, "এক": 1, "দুই": 2, "তিন": 3, "চার": 4,
+      "পাঁচ": 5, "ছয়": 6, "সাত": 7, "আট": 8, "নয়": 9
+    },
+    "teens": {
+      "দশ": 10, "এগারো": 11, "বারো": 12, "তেরো": 13, "চৌদ্দ": 14,
+      "পনেরো": 15, "ষোলো": 16, "সতেরো": 17, "আঠারো": 18, "উনিশ": 19
+    },
+    "tens": {
+      "কুড়ি": 20, "বিশ": 20, "তিরিশ": 30, "চল্লিশ": 40, "পঞ্চাশ": 50,
+      "ষাট": 60, "সত্তর": 70, "আশি": 80, "নব্বই": 90
+    },
+    "multipliers": {
+      "শত": 100, "শো": 100, "হাজার": 1000, "লাখ": 100000
+    },
+    "connectors": ["ebong", "এবং", "aar", "আর"]
+  },
+  "credit_words": ["baaki", "বাকি", "dhar", "ধার", "khato", "খাতা", "likhun", "লিখুন", "credit"],
+  "payment_words": ["dilo", "দিল", "diyeche", "দিয়েছে", "joma", "জমা", "shodh", "শোধ", "payment", "paid"],
+  "dates": { "aaj": 0, "আজ": 0, "kaal": -1, "কাল": -1 },
+  "negation": ["na", "naa", "না"],
+  "confirmation": ["hyan", "thik", "হ্যাঁ", "ঠিক"],
+  "correction": ["bhul", "ভুল"],
+  "query_words": ["koto", "hishab", "কত", "হিসাব", "বাকি"],
+  "undo_words": ["muche", "বাতিল", "মুছে ফেলুন", "undo"]
+}

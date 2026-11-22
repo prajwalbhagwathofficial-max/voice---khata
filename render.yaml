@@ -1,12 +1,15 @@
 services:
   - type: web
-    name: voice-khata
+    name: khata
     runtime: docker
-    dockerfilePath: ./Dockerfile
     region: singapore
-    plan: free
+    plan: starter
     healthCheckPath: /healthz
     autoDeploy: true
+    disk:
+      name: khata-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: DATA_DIR
         value: /var/data
@@ -19,7 +22,7 @@ services:
       - key: FEATURE_SHARE
         value: "false"
       - key: CORRECTION_TTL_SECONDS
-        value: "300"
+        value: "30"
       - key: AMOUNT_CONFIRM_THRESHOLD_PAISE
         value: "500000"
       - key: TRANSCRIPT_TTL_HOURS

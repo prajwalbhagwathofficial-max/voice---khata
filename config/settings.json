@@ -1,0 +1,62 @@
+{
+  "_comment": "Voice Khata default settings. These can be overridden via the settings table in the database.",
+  
+  "shop": {
+    "name": "",
+    "lat": 0,
+    "lng": 0,
+    "city": ""
+  },
+
+  "reminders": {
+    "reminder_first_after_days": 7,
+    "reminder_repeat_days": 3,
+    "weekly_summary_days": 7
+  },
+
+  "limits": {
+    "high_due_limit": 10000,
+    "distance_limit_km": 5
+  },
+
+  "display": {
+    "currency_symbol": "₹",
+    "date_format": "DD/MM/YYYY"
+  },
+
+  "languages": {
+    "supported": ["auto", "hi", "kn", "ta", "te", "mr", "gu", "bn", "ml", "pa", "en"],
+    "default": "auto",
+    "stt_language_code": "indic-auto"
+  },
+
+  "customer_id": {
+    "phone_digits_in_id": 6,
+    "separator": "_"
+  },
+
+  "voice": {
+    "tts_model": "timbre-v3.0",
+    "tts_voice": "Shivani",
+    "tts_speed": 1.0,
+    "tts_sample_rate": 48000,
+    "stt_model": "prisma-v3.0",
+    "stt_sample_rate": 16000,
+    "vad_threshold": 0.7,
+    "min_speech_ms": 200,
+    "min_silence_ms": 500
+  },
+
+  "llm": {
+    "model": "qwen/qwen3.8-27b",
+    "max_tokens": 512,
+    "temperature": 0.1
+  },
+
+  "sync": {
+    "sync_interval_ms": 30000,
+    "max_retry_attempts": 5,
+    "backoff_base_ms": 1000,
+    "backoff_max_ms": 60000
+  }
+}

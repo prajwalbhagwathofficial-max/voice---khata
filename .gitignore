@@ -1,35 +1,26 @@
-# Secrets & environment
-.env
-.env.*
-!.env.example
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-*.egg-info/
-dist/
-build/
-
-# SQLite databases
-*.db
-*.db-shm
-*.db-wal
-*.sqlite
-*.sqlite3
-data/
-
-# Node / Vite client
 node_modules/
-client/dist/
-
-# OS / IDE
+dist/
+.env
+.env.local
+.env.production
+*.log
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/
+.vite/
+coverage/
+.vs/
+*.wav
+__pycache__/
+*.pyc
+.pytest_cache/
+test_unit_data/
+test_data/
+data/
+*.db
+*.db-wal
+*.db-shm
+*.zip
+_extracted/
+*.egg-info/
+.venv/
+.hypothesis/

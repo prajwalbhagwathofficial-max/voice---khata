@@ -1,0 +1,35 @@
+{
+  "_comment": "Marathi message templates.",
+  "language": "mr",
+  "language_name": "मराठी",
+
+  "ai_disclosure": "नमस्कार! मी {shop} चा AI सहाय्यक आहे. खात्याचा हिशोब ठेवण्यात मदत करतो.",
+
+  "reminder_first": "नमस्कार {name} जी, {shop} कडून. आपली ₹{total} ची उधारी {days} दिवसांपासून बाकी आहे. कृपया लवकर भरा. धन्यवाद!",
+  "reminder_repeat": "नमस्कार {name} जी, {shop} कडून आठवण. आपली ₹{total} बाकी अद्याप आहे. कृपया जमा करा.",
+  "reminder_weekly_summary": "नमस्कार {name} जी, {shop} साप्ताहिक हिशोब. एकूण बाकी ₹{total}. दुकानात संपर्क करा.",
+  "reminder_high_due": "नमस्कार {name} जी, {shop} कडून. आपली बाकी ₹{total} खूप जास्त झाली आहे. कृपया लवकर भरा.",
+  "thank_you": "धन्यवाद {name} जी! {shop} वरील आपली सर्व बाकी पूर्ण झाली आहे!",
+
+  "credit_added": "{name} जी, ₹{amount} उधारी जोडली. एकूण बाकी ₹{total}.",
+  "payment_received": "{name} जी, ₹{amount} जमा झाले. शिल्लक बाकी ₹{total}.",
+  "due_cleared": "{name} जी, आपले खाते पूर्णपणे चुकते झाले! धन्यवाद!",
+  "total_query": "{name} जींची एकूण बाकी ₹{total} आहे.",
+  "today_summary": "आजची एकूण उधारी ₹{total} आहे.",
+
+  "high_due_warning": "सूचना: {name} जींची बाकी ₹{total} मर्यादेपेक्षा जास्त आहे.",
+  "high_due_confirm": "{name} जींची बाकी मर्यादा ओलांडली आहे. तरीही उधारी द्यायची का?",
+  "distance_warning": "आपण दुकानापासून दूर आहात.",
+
+  "ask_which_customer": "अनेक {name} सापडले. कोणते {name}?",
+  "ask_name": "नवीन ग्राहकाचे नाव सांगा.",
+  "ask_address": "पत्ता सांगा.",
+  "ask_phone": "फोन नंबर सांगा.",
+  "ask_whatsapp_consent": "WhatsApp वर आठवण पाठवू शकतो का?",
+  "confirm_new_customer": "{name}, {city}. ₹{amount} उधारी. बरोबर आहे का?",
+
+  "error_no_name": "कृपया ग्राहकाचे नाव सांगा.",
+  "error_no_amount": "किती रक्कम आहे ते सांगा.",
+  "error_not_understood": "सांगा भाऊ! कोणाचा हिशोब पाहायचा किंवा उधारी लिहायची आहे?",
+  "error_invalid_phone": "योग्य फोन नंबर सांगा."
+}

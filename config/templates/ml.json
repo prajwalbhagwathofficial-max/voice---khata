@@ -1,0 +1,35 @@
+{
+  "_comment": "Malayalam message templates.",
+  "language": "ml",
+  "language_name": "മലയാളം",
+
+  "ai_disclosure": "നമസ്കാരം! ഞാൻ {shop} കടയിലെ AI സഹായിയാണ്. അക്കൗണ്ട് കണക്കുകൾ സൂക്ഷിക്കാൻ സഹായിക്കുന്നു.",
+
+  "reminder_first": "നമസ്കാരം {name}, {shop} കടയിൽ നിന്നും. നിങ്ങളുടെ ₹{total} കുടിശ്ശിക {days} ദിവസമായി ബാക്കിയുണ്ട്. ഉടൻ അടയ്ക്കാൻ അപേക്ഷിക്കുന്നു. നന്ദി!",
+  "reminder_repeat": "നമസ്കാരം {name}, {shop} ഓർമ്മപ്പെടുത്തൽ. നിങ്ങളുടെ ₹{total} കുടിശ്ശിക ഇപ്പോഴും ബാക്കിയുണ്ട്. ദയവായി അടയ്ക്കുക.",
+  "reminder_weekly_summary": "നമസ്കാരം {name}, {shop} പ്രതിവാര കണക്ക്. ആകെ കുടിശ്ശിക ₹{total}. കടയുമായി ബന്ധപ്പെടുക.",
+  "reminder_high_due": "നമസ്കാരം {name}, {shop} കടയിൽ നിന്നും. നിങ്ങളുടെ കുടിശ്ശിക ₹{total} വളരെ കൂടുതലാണ്. ഉടൻ അടയ്ക്കുക.",
+  "thank_you": "നന്ദി {name}! {shop} കടയിലെ നിങ്ങളുടെ എല്ലാ കുടിശ്ശികയും പൂർണ്ണമായി അടച്ചു തീർത്തു!",
+
+  "credit_added": "{name} അവർക്ക് ₹{amount} കടം ചേർത്തു. ആകെ കുടിശ്ശിക ₹{total}.",
+  "payment_received": "{name} അവർ ₹{amount} അടച്ചു. ബാക്കി കുടിശ്ശിക ₹{total}.",
+  "due_cleared": "{name}, നിങ്ങളുടെ കണക്ക് പൂർണ്ണമായി തീർന്നു! നന്ദി!",
+  "total_query": "{name} അവരുടെ ആകെ കുടിശ്ശിക ₹{total}.",
+  "today_summary": "ഇന്നത്തെ ആകെ കടം ₹{total}.",
+
+  "high_due_warning": "മുന്നറിയിപ്പ്: {name} അവരുടെ കുടിശ്ശിക ₹{total} പരിധി കവിഞ്ഞു.",
+  "high_due_confirm": "{name} അവരുടെ കുടിശ്ശിക പരിധി കവിഞ്ഞു. തുടർന്നും കടം നൽകണമോ?",
+  "distance_warning": "നിങ്ങൾ കടയിൽ നിന്ന് ദൂരെയാണ്.",
+
+  "ask_which_customer": "പല {name} ഉണ്ട്. ഏത് {name}?",
+  "ask_name": "പുതിയ ഉപഭോക്താവിന്റെ പേര് പറയുക.",
+  "ask_address": "മേൽവിലാസം പറയുക.",
+  "ask_phone": "ഫോൺ നമ്പർ പറയുക.",
+  "ask_whatsapp_consent": "WhatsApp വഴി ഓർമ്മപ്പെടുത്തൽ അയക്കട്ടെ?",
+  "confirm_new_customer": "{name}, {city}. ₹{amount} കടം. ശരിയാണോ?",
+
+  "error_no_name": "ദയവായി ഉപഭോക്താവിന്റെ പേര് പറയുക.",
+  "error_no_amount": "എത്ര തുകയെന്ന് പറയുക.",
+  "error_not_understood": "പറയൂ സാർ! ആരുടെ കണക്ക് നോക്കണം അല്ലെങ്കിൽ കടം എഴുതണം?",
+  "error_invalid_phone": "ശരിയായ ഫോൺ നമ്പർ നൽകുക."
+}

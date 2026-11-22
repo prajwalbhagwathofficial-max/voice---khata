@@ -1,0 +1,35 @@
+{
+  "_comment": "Bengali message templates.",
+  "language": "bn",
+  "language_name": "বাংলা",
+
+  "ai_disclosure": "নমস্কার! আমি {shop} এর AI সহায়ক। খাতার হিসাব রাখতে সাহায্য করি।",
+
+  "reminder_first": "নমস্কার {name} বাবু, {shop} থেকে। আপনার ₹{total} বাকি {days} দিন ধরে আছে। অনুগ্রহ করে তাড়াতাড়ি পরিশোধ করুন। ধন্যবাদ!",
+  "reminder_repeat": "নমস্কার {name} বাবু, {shop} থেকে রিমাইন্ডার। আপনার ₹{total} বাকি এখনও রয়েছে। অনুগ্রহ করে মিটিয়ে দিন।",
+  "reminder_weekly_summary": "নমস্কার {name} বাবু, {shop} সাপ্তাহিক হিসাব। মোট বাকি ₹{total}। দোকানে যোগাযোগ করুন।",
+  "reminder_high_due": "নমস্কার {name} বাবু, {shop} থেকে। আপনার বাকি ₹{total} অনেক বেশি হয়ে গেছে। শীঘ্রই পরিশোধ করুন।",
+  "thank_you": "ধন্যবাদ {name} বাবু! {shop} এ আপনার সব বাকি শোধ হয়ে গেছে!",
+
+  "credit_added": "{name} বাবুর নামে ₹{amount} বাকি যোগ করা হয়েছে। মোট বাকি ₹{total}।",
+  "payment_received": "{name} বাবু ₹{amount} জমা দিয়েছেন। অবশিষ্ট বাকি ₹{total}।",
+  "due_cleared": "{name} বাবু, আপনার সব হিসাব পরিষ্কার হয়ে গেছে! ধন্যবাদ!",
+  "total_query": "{name} বাবুর মোট বাকি ₹{total}।",
+  "today_summary": "আজকের মোট বাকি ₹{total}।",
+
+  "high_due_warning": "সতর্কতা: {name} বাবুর বাকি ₹{total} সীমা অতিক্রম করেছে।",
+  "high_due_confirm": "{name} বাবুর বাকি সীমা ছাড়িয়ে গেছে। তবুও কি বাকি দিতে চান?",
+  "distance_warning": "আপনি দোকান থেকে দূরে আছেন।",
+
+  "ask_which_customer": "একাধিক {name} পাওয়া গেছে। কোন {name}?",
+  "ask_name": "নতুন গ্রাহকের নাম বলুন।",
+  "ask_address": "ঠিকানা বলুন।",
+  "ask_phone": "ফোন নম্বর বলুন।",
+  "ask_whatsapp_consent": "WhatsApp এ রিমাইন্ডার পাঠানো যাবে কি?",
+  "confirm_new_customer": "{name}, {city}। ₹{amount} বাকি। ঠিক আছে?",
+
+  "error_no_name": "অনুগ্রহ করে গ্রাহকের নাম বলুন।",
+  "error_no_amount": "কত টাকা বলুন।",
+  "error_not_understood": "বলুন দাদা! কার হিসাব দেখতে চান বা কার বাকি লিখতে চান?",
+  "error_invalid_phone": "সঠিক ফোন নম্বর বলুন।"
+}

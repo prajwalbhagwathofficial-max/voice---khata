@@ -1,0 +1,35 @@
+{
+  "_comment": "Telugu message templates.",
+  "language": "te",
+  "language_name": "తెలుగు",
+
+  "ai_disclosure": "నమస్కారం! నేను {shop} AI సహాయకుడిని. ఖాతా లెక్కలు రాయడంలో సహాయం చేస్తాను.",
+
+  "reminder_first": "నమస్కారం {name} గారు, {shop} నుండి. మీ ₹{total} బకాయి {days} రోజులుగా ఉంది. దయచేసి చెల్లించండి. ధన్యవాదాలు!",
+  "reminder_repeat": "నమస్కారం {name} గారు, {shop} నుండి రిమైండర్. మీ ₹{total} బకాయి ఇంకా ఉంది. దయచేసి చెల్లించండి.",
+  "reminder_weekly_summary": "నమస్కారం {name} గారు, {shop} వీక్లీ సమ్మరీ. మొత్తం బకాయి ₹{total}. దుకాణాన్ని సంప్రదించండి.",
+  "reminder_high_due": "నమస్కారం {name} గారు, {shop} నుండి. మీ బకాయి ₹{total} చాలా ఎక్కువగా ఉంది. త్వరగా చెల్లించండి.",
+  "thank_you": "ధన్యవాదాలు {name} గారు! {shop} లో మీ బకాయి మొత్తం పూర్తయింది!",
+
+  "credit_added": "{name} గారి ఖాతాలో ₹{amount} అప్పు చేర్చబడింది. మొత్తం బకాయి ₹{total}.",
+  "payment_received": "{name} గారు ₹{amount} చెల్లించారు. మిగిలిన బకాయి ₹{total}.",
+  "due_cleared": "{name} గారు, మీ బకాయి పూర్తయింది! ధన్యవాదాలు!",
+  "total_query": "{name} గారి మొత్తం బకాయి ₹{total}.",
+  "today_summary": "ఈరోజు మొత్తం అప్పు ₹{total}.",
+
+  "high_due_warning": "హెచ్చరిక: {name} గారి బకాయి ₹{total} పరిమితి దాటింది.",
+  "high_due_confirm": "{name} గారి బకాయి పరిమితి దాటింది. అయినా అప్పు ఇవ్వాలా?",
+  "distance_warning": "మీరు దుకాణానికి దూరంగా ఉన్నారు.",
+
+  "ask_which_customer": "చాలా మంది {name} ఉన్నారు. ఏ {name}?",
+  "ask_name": "కొత్త కస్టమర్ పేరు చెప్పండి.",
+  "ask_address": "చిరునామా చెప్పండి.",
+  "ask_phone": "ఫోన్ నంబర్ చెప్పండి.",
+  "ask_whatsapp_consent": "WhatsApp రిమైండర్ పంపవచ్చా?",
+  "confirm_new_customer": "{name}, {city}. ₹{amount} అప్పు. సరైనదేనా?",
+
+  "error_no_name": "దయచేసి కస్టమర్ పేరు చెప్పండి.",
+  "error_no_amount": "ఎంత రూపాయలు చెప్పండి.",
+  "error_not_understood": "చెప్పండి సార్! ఎవరి లెక్క చూడాలి లేదా అప్పు రాయాలి?",
+  "error_invalid_phone": "సరైన ఫోన్ నంబర్ చెప్పండి."
+}

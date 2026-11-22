@@ -1,0 +1,37 @@
+{
+  "_comment": "Hindi message templates. {name}, {amount}, {total}, {currency}, {days}, {shop} are placeholders.",
+  "language": "hi",
+  "language_name": "हिंदी",
+
+  "ai_disclosure": "नमस्ते! मैं {shop} का AI सहायक हूँ। मैं आपके खाते का हिसाब रखने में मदद करता हूँ।",
+
+  "reminder_first": "नमस्ते {name} जी, {shop} से। आपका ₹{total} का बकाया {days} दिन से है। कृपया जल्दी भुगतान करें। धन्यवाद!",
+  "reminder_repeat": "नमस्ते {name} जी, यह {shop} से याद दिलाना है। आपका ₹{total} बकाया अभी भी बाकी है। कृपया भुगतान करें।",
+  "reminder_weekly_summary": "नमस्ते {name} जी, {shop} से साप्ताहिक सारांश। आपका कुल बकाया ₹{total} है। विवरण के लिए दुकान पर संपर्क करें।",
+  "reminder_high_due": "नमस्ते {name} जी, {shop} से। आपका बकाया ₹{total} हो गया है जो काफी अधिक है। कृपया जल्दी से जल्दी भुगतान करें।",
+  "thank_you": "धन्यवाद {name} जी! आपका {shop} पर सभी बकाया चुका दिया गया है। फिर से आने के लिए शुक्रिया!",
+
+  "credit_added": "{name} जी, ₹{amount} उधार जोड़ा गया। कुल बकाया ₹{total}।",
+  "payment_received": "{name} जी, ₹{amount} का भुगतान मिला। बकाया ₹{total}।",
+  "purchase_recorded": "{item} के ₹{amount} की खरीदारी दर्ज की गई। बिल संख्या {billNumber} तैयार है।",
+  "due_cleared": "{name} जी, आपका बकाया पूरा हो गया! धन्यवाद!",
+  "total_query": "{name} जी का कुल बकाया ₹{total} है।",
+  "today_summary": "आज का कुल उधार ₹{total} है।",
+  "multiple_customers_found": "{count} ग्राहक मिले। कृपया केंगेरी या फ़ोन नंबर से सही ग्राहक चुनें।",
+
+  "high_due_warning": "चेतावनी: {name} जी का बकाया ₹{total} है, जो सीमा से अधिक है।",
+  "high_due_confirm": "{name} जी का बकाया सीमा पार कर चुका है। क्या फिर भी उधार देना है?",
+  "distance_warning": "आप दुकान से दूर हैं। कृपया सही जगह से इस्तेमाल करें।",
+
+  "ask_which_customer": "कई {name} मिले। कौनसे {name}?",
+  "ask_name": "नए ग्राहक का नाम बताइए।",
+  "ask_address": "पता बताइए - कॉलोनी या गाँव?",
+  "ask_phone": "फ़ोन नंबर बताइए।",
+  "ask_whatsapp_consent": "क्या WhatsApp पर याद दिलाना ठीक है?",
+  "confirm_new_customer": "{name}, {city}। ₹{amount} उधार। सही है?",
+
+  "error_no_name": "कृपया ग्राहक का नाम बताइए।",
+  "error_no_amount": "कितना रुपया? कृपया राशि बताइए।",
+  "error_not_understood": "हाँ जी भाई साहब! बताइए किसका हिसाब देखना है या नया उधार लिखना है?",
+  "error_invalid_phone": "सही फ़ोन नंबर बताइए।"
+}

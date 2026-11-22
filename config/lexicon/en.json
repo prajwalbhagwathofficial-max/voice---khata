@@ -1,0 +1,43 @@
+{
+  "_comment": "English lexicon for voice parsing. Covers standard English and common Hinglish/Kanglish patterns.",
+  "language": "en",
+  "language_code": "en-IN",
+  "language_name": "English",
+
+  "numbers": {
+    "digits": {
+      "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4,
+      "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9
+    },
+    "teens": {
+      "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
+      "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19
+    },
+    "tens": {
+      "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
+      "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90
+    },
+    "multipliers": {
+      "hundred": 100, "thousand": 1000, "lakh": 100000, "lac": 100000
+    },
+    "connectors": ["and"]
+  },
+
+  "credit_words": ["credit", "udhaar", "udhar", "loan", "khata", "lend", "gave", "given", "owes", "borrowed"],
+  "payment_words": ["payment", "paid", "received", "gave back", "returned", "settled", "diya", "de diya", "deposited"],
+
+  "dates": {
+    "today": 0,
+    "yesterday": -1,
+    "day before yesterday": -2,
+    "last week": -7
+  },
+
+  "negation": ["no", "not", "nope", "wrong", "cancel", "nahi", "incorrect"],
+  "confirmation": ["yes", "yeah", "yep", "correct", "right", "ok", "okay", "sure", "confirm", "haan"],
+  "correction": ["no", "not", "wrong", "change", "correct it", "nahi", "galat"],
+
+  "query_words": ["how much", "total", "balance", "due", "remaining", "hisab", "kitna", "tell me"],
+  "purchase_words": ["bought", "buy", "purchase", "cash sale", "cash", "sold", "bill", "milk", "biscuit", "packet"],
+  "undo_words": ["undo", "remove", "delete", "take back", "reverse"]
+}

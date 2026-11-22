@@ -1,0 +1,37 @@
+{
+  "_comment": "English message templates. {name}, {amount}, {total}, {currency}, {days}, {shop} are placeholders.",
+  "language": "en",
+  "language_name": "English",
+
+  "ai_disclosure": "Hello! I am {shop}'s AI assistant. I help keep track of your account.",
+
+  "reminder_first": "Hello {name}, this is from {shop}. Your due of ₹{total} has been pending for {days} days. Please make the payment. Thank you!",
+  "reminder_repeat": "Hello {name}, a reminder from {shop}. Your due of ₹{total} is still pending. Please make the payment.",
+  "reminder_weekly_summary": "Hello {name}, weekly summary from {shop}. Your total due is ₹{total}. Please contact the shop for details.",
+  "reminder_high_due": "Hello {name}, this is from {shop}. Your due of ₹{total} is quite high. Please make the payment at the earliest.",
+  "thank_you": "Thank you {name}! All your dues at {shop} are cleared. See you again!",
+
+  "credit_added": "{name}, ₹{amount} credit added. Total due ₹{total}.",
+  "payment_received": "{name}, ₹{amount} payment received. Due ₹{total}.",
+  "purchase_recorded": "Purchase of ₹{amount} for {item} recorded. Bill {billNumber} is ready.",
+  "due_cleared": "{name}, your due is fully cleared! Thank you!",
+  "total_query": "{name}'s total due is ₹{total}.",
+  "today_summary": "Today's total credit is ₹{total}.",
+  "multiple_customers_found": "{count} customers found. Please select by city or phone.",
+
+  "high_due_warning": "Warning: {name}'s due is ₹{total}, exceeding the limit.",
+  "high_due_confirm": "{name}'s due has crossed the limit. Still want to add credit?",
+  "distance_warning": "You are far from the shop. Please use from the correct location.",
+
+  "ask_which_customer": "Multiple {name} found. Which {name}?",
+  "ask_name": "Tell me the new customer's name.",
+  "ask_address": "What is the address - colony or village?",
+  "ask_phone": "Please tell the phone number.",
+  "ask_whatsapp_consent": "Can we send WhatsApp reminders?",
+  "confirm_new_customer": "{name}, {city}. ₹{amount} credit. Is that correct?",
+
+  "error_no_name": "Please tell the customer's name.",
+  "error_no_amount": "How much? Please tell the amount.",
+  "error_not_understood": "Yes sir! Please tell me whose ledger or payment to update.",
+  "error_invalid_phone": "Please tell a valid phone number."
+}
