@@ -93,11 +93,12 @@ async def security_headers_middleware(request: Request, call_next):
     # Content-Security-Policy (self with necessary inline/blob/audio worker support)
     response.headers["Content-Security-Policy"] = (
         "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: wss: ws: https:; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.tailwindcss.com; "
         "worker-src 'self' blob:; "
         "media-src 'self' blob: data:; "
         "connect-src 'self' wss: ws: https:; "
-        "style-src 'self' 'unsafe-inline' https:; "
+        "style-src 'self' 'unsafe-inline' https: https://fonts.googleapis.com; "
+        "font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com; "
         "img-src 'self' data: blob: https:;"
     )
     # Permissions-Policy: microphone access for PWA speech input
