@@ -2558,6 +2558,9 @@
           }),
         });
 
+        if (!resp.ok) {
+          throw new Error(`Voice extract endpoint returned ${resp.status}`);
+        }
         if (resp.ok) {
           const data = await resp.json();
           const intent = data.intent;
@@ -3028,11 +3031,14 @@
           if (typeof onEndCallback === 'function') onEndCallback();
           return;
         }
-        window.speechSynthesis.cancel();
+        try {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.resume();
+        } catch (e) {}
         const utterance = new SpeechSynthesisUtterance(text);
         const langMap = { hi: 'hi-IN', kn: 'kn-IN', ta: 'ta-IN', te: 'te-IN', mr: 'mr-IN', en: 'en-IN' };
         utterance.lang = langMap[lang] || 'hi-IN';
-        utterance.rate = 1.0;
+        utterance.rate = 1.05;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
         let doneCalled = false;
@@ -3056,14 +3062,14 @@
         gnaniTtsSocket = ws;
         const rawChunks = [];
 
-        // Generous safety timer: 6 seconds (avoids premature cutoffs on long sentences)
+        // Fast fallback timer: 2 seconds max before native browser speech takes over
         const timeoutTimer = setTimeout(() => {
           if (!played && thisGen === gnaniTtsGeneration) {
             console.warn('[VoiceKhata] Gnani TTS response timeout, switching to browser speech synthesis');
             try { ws.close(); } catch (e) {}
             fallbackNativeTTS();
           }
-        }, 6000);
+        }, 2000);
 
         ws.onopen = () => {
           if (thisGen !== gnaniTtsGeneration) {
@@ -3084,6 +3090,14 @@
           if (thisGen !== gnaniTtsGeneration) return;
           try {
             const msg = JSON.parse(evt.data);
+            if (msg.type === 'error' || msg.error) {
+              console.warn('[VoiceKhata] Gnani TTS error, using native voice:', msg.message || msg.error);
+              clearTimeout(timeoutTimer);
+              try { ws.close(); } catch (e) {}
+              fallbackNativeTTS();
+              return;
+            }
+
             const b64 = msg.audio || msg.data?.audio;
             const isFinal = Boolean(msg.is_final || msg.data?.is_final || msg.type === 'complete');
 
@@ -3159,6 +3173,15 @@
      * Fallback: Browser Web Speech API (webkitSpeechRecognition)
      */
     function toggleVoiceListening() {
+      // Pre-warm SpeechSynthesis on user tap for mobile audio permissions
+      if ('speechSynthesis' in window) {
+        try {
+          window.speechSynthesis.resume();
+          const dummy = new SpeechSynthesisUtterance('');
+          dummy.volume = 0;
+          window.speechSynthesis.speak(dummy);
+        } catch (e) {}
+      }
       if (isListening) {
         stopVoiceListening();
       } else {
@@ -3178,7 +3201,7 @@
         gnaniCurrentAudio = null;
       }
       if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
+        try { window.speechSynthesis.cancel(); window.speechSynthesis.resume(); } catch (e) {}
       }
       initGnaniAudioContext();
 
@@ -3200,7 +3223,69 @@
 
       let gnaniReceivedFinal = false;
 
-      // 1. Connect to Gnani STT WebSocket proxy
+      // 1. Primary for Chrome/Edge/Android: Fast, zero-hardware-contention Browser Speech Recognition
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          recognitionInstance = new SpeechRecognition();
+          const activeT = I18N[currentAppLang] || I18N.hinglish;
+          recognitionInstance.lang = activeT.code || 'hi-IN';
+          recognitionInstance.interimResults = true;
+          recognitionInstance.continuous = false;
+          recognitionInstance.maxAlternatives = 1;
+
+          recognitionInstance.onresult = (event) => {
+            let interimTranscript = '';
+            let finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+              } else {
+                interimTranscript += event.results[i][0].transcript;
+              }
+            }
+            const displayed = (finalTranscript || interimTranscript).trim();
+            if (displayed) {
+              latestVoiceTranscript = displayed;
+              document.querySelectorAll('.voice-transcript').forEach((el) => {
+                el.textContent = `"${displayed}"`;
+              });
+            }
+            if (finalTranscript.trim()) {
+              const finalCmd = finalTranscript.trim();
+              latestVoiceTranscript = '';
+              stopVoiceListening();
+              processVoiceCommand(finalCmd);
+            }
+          };
+
+          recognitionInstance.onerror = (e) => {
+            console.warn('[VoiceKhata] SpeechRecognition error, activating Gnani STT:', e);
+            startGnaniSttStream();
+          };
+
+          recognitionInstance.onend = () => {
+            if (isListening && latestVoiceTranscript) {
+              const cmd = latestVoiceTranscript;
+              latestVoiceTranscript = '';
+              stopVoiceListening();
+              processVoiceCommand(cmd);
+            }
+          };
+
+          recognitionInstance.start();
+          return;
+        } catch (err) {
+          console.warn('[VoiceKhata] SpeechRecognition init failed, using Gnani STT:', err);
+        }
+      }
+
+      // 2. Fallback / Alternative: Gnani Prisma STT WebSocket Proxy
+      startGnaniSttStream();
+    }
+
+    function startGnaniSttStream() {
+      let gnaniReceivedFinal = false;
       try {
         const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.host || '127.0.0.1:3000';
@@ -3236,7 +3321,7 @@
         };
 
         gnaniSttSocket.onerror = (e) => {
-          console.warn('[VoiceKhata] Gnani STT WebSocket error, fallback active:', e);
+          console.warn('[VoiceKhata] Gnani STT WebSocket error:', e);
         };
 
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -3265,7 +3350,6 @@
                   try { gnaniSttSocket.send(pcm.buffer); } catch (err) {}
                 }
 
-                // Calculate RMS energy for automatic silence / stop detection
                 let sumSq = 0;
                 for (let i = 0; i < input.length; i += 8) {
                   sumSq += input[i] * input[i];
@@ -3293,47 +3377,7 @@
       } catch (err) {
         console.warn('[VoiceKhata] Gnani STT init error:', err);
       }
-
-      // 2. Parallel Browser Web Speech API as zero-latency complement / fallback
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        try {
-          recognitionInstance = new SpeechRecognition();
-          const activeT = I18N[currentAppLang] || I18N.hinglish;
-          recognitionInstance.lang = activeT.code;
-          recognitionInstance.interimResults = true;
-          recognitionInstance.maxAlternatives = 1;
-
-          recognitionInstance.onresult = (event) => {
-            if (gnaniReceivedFinal) return;
-            const transcript = Array.from(event.results)
-              .map((r) => r[0].transcript)
-              .join('');
-            if (transcript && transcript.trim()) {
-              latestVoiceTranscript = transcript.trim();
-              document.querySelectorAll('.voice-transcript').forEach((el) => {
-                el.textContent = `"${transcript.trim()}"`;
-              });
-              if (event.results[0].isFinal) {
-                const finalCmd = transcript.trim();
-                latestVoiceTranscript = '';
-                stopVoiceListening();
-                processVoiceCommand(finalCmd);
-              }
-            }
-          };
-
-          recognitionInstance.onerror = () => {
-            if (!gnaniSttSocket || gnaniSttSocket.readyState !== WebSocket.OPEN) {
-              document.querySelectorAll('.voice-transcript').forEach((el) => {
-                el.textContent = 'Mic listening or tap any sample command below!';
-              });
-            }
-          };
-
-          recognitionInstance.start();
-        } catch (err) {
-          document.querySelectorAll('.voice-transcript').forEach((el) => {
+    }
             el.textContent = 'Tap any sample Hinglish command below!';
           });
         }
