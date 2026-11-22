@@ -4,8 +4,11 @@ FastAPI Backend + Built Client Static Delivery + SQLite Persistent Ledger
 """
 
 import os
+import json
+import asyncio
 import mimetypes
 import logging
+import httpx
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -174,10 +177,171 @@ async def api_settings():
 async def api_keys_status():
     mask = lambda k: (k[:4] + "..." + k[-4:]) if (k and len(k) > 8) else ("****" if k else None)
     return {
-        "groq": {"configured": bool(GROQ_API_KEY), "masked": mask(GROQ_API_KEY)},
-        "gnani": {"configured": bool(GNANI_API_KEY), "masked": mask(GNANI_API_KEY)},
+        "groq": {
+            "configured": bool(GROQ_API_KEY),
+            "masked": mask(GROQ_API_KEY),
+            "apiKey": GROQ_API_KEY or "",
+            "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        },
+        "gnani": {
+            "configured": bool(GNANI_API_KEY),
+            "masked": mask(GNANI_API_KEY),
+            "apiKey": GNANI_API_KEY or "",
+        },
         "db": {"configured": bool(DB_ENCRYPTION_KEY), "fingerprint": get_key_fingerprint(DB_ENCRYPTION_KEY)},
     }
+
+@app.post("/api/settings/keys")
+async def update_api_keys(req: Request):
+    global GROQ_API_KEY, GNANI_API_KEY
+    try:
+        data = await req.json()
+        if data.get("groqApiKey"):
+            GROQ_API_KEY = str(data["groqApiKey"]).strip()
+        if data.get("gnaniApiKey"):
+            GNANI_API_KEY = str(data["gnaniApiKey"]).strip()
+        return {"success": True, "message": "API keys updated successfully"}
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=400)
+
+@app.post("/api/voice/extract")
+async def extract_voice_intent(req: Request):
+    body = {}
+    try:
+        body = await req.json()
+        transcript = body.get("transcript", "")
+        language = body.get("language", "hi")
+        active_key = GROQ_API_KEY or os.getenv("GROQ_API_KEY", "")
+        if not active_key or not transcript:
+            return {"intent": "unknown", "customerName": None, "amount": None, "rawTranscript": transcript}
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {active_key}", "Content-Type": "application/json"},
+                json={
+                    "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+                    "messages": [
+                        {"role": "system", "content": "You extract structured intent from Indian kirana store speech. Return valid JSON only with keys: intent (credit, payment, purchase, query, greeting, unknown), customerName (string or null), amount (number or null), items (array), note (string)."},
+                        {"role": "user", "content": f"Language: {language}\nSpoken utterance: {transcript}"}
+                    ],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0.1
+                }
+            )
+            if resp.status_code == 200:
+                result = resp.json()
+                content = result["choices"][0]["message"]["content"]
+                return json.loads(content)
+            return {"intent": "unknown", "rawTranscript": transcript}
+    except Exception as e:
+        logger.warning(f"Groq intent extraction error: {e}")
+        return {"intent": "unknown", "rawTranscript": body.get("transcript", "")}
+
+@app.websocket("/api/voice/stt")
+async def websocket_stt_proxy(client_ws: WebSocket):
+    await client_ws.accept()
+    query_params = dict(client_ws.query_params)
+    active_lang = query_params.get("lang", "indic-auto")
+    active_key = GNANI_API_KEY or os.getenv("GNANI_API_KEY", "")
+    if not active_key:
+        await client_ws.send_json({"type": "error", "message": "Gnani API key not configured"})
+        await client_ws.close(code=1008)
+        return
+
+    stt_url = os.getenv("GNANI_STT_URL", "wss://api.vachana.ai/stt/v3/stream")
+    headers = {
+        "x-api-key-id": active_key,
+        "x-model": "prisma-v3.0",
+        "language_code": active_lang,
+        "x-sample-rate": "16000",
+    }
+    import websockets
+    try:
+        async with websockets.connect(stt_url, extra_headers=headers) as gnani_ws:
+            async def from_client():
+                try:
+                    while True:
+                        msg = await client_ws.receive()
+                        if "bytes" in msg and msg["bytes"]:
+                            await gnani_ws.send(msg["bytes"])
+                        elif "text" in msg and msg["text"]:
+                            await gnani_ws.send(msg["text"])
+                except Exception:
+                    pass
+
+            async def from_gnani():
+                try:
+                    async for gmsg in gnani_ws:
+                        if isinstance(gmsg, str):
+                            data = json.loads(gmsg) if gmsg.strip().startswith("{") else {"text": gmsg}
+                            if "text" in data and "transcript" not in data:
+                                data["transcript"] = data["text"]
+                            await client_ws.send_text(json.dumps(data))
+                        else:
+                            await client_ws.send_bytes(gmsg)
+                except Exception:
+                    pass
+
+            await asyncio.gather(from_client(), from_gnani(), return_exceptions=True)
+    except Exception as e:
+        logger.warning(f"Gnani STT connection error: {e}")
+        try:
+            await client_ws.send_json({"type": "error", "message": str(e)})
+            await client_ws.close()
+        except Exception:
+            pass
+
+@app.websocket("/api/voice/tts")
+async def websocket_tts_proxy(client_ws: WebSocket):
+    await client_ws.accept()
+    active_key = GNANI_API_KEY or os.getenv("GNANI_API_KEY", "")
+    if not active_key:
+        await client_ws.send_json({"type": "error", "message": "Gnani API key not configured"})
+        await client_ws.close(code=1008)
+        return
+
+    tts_url = os.getenv("GNANI_TTS_URL", "wss://api.vachana.ai/api/v1/tts")
+    headers = {"X-API-Key-ID": active_key}
+    import websockets
+    try:
+        while True:
+            text_data = await client_ws.receive_text()
+            req_data = json.loads(text_data) if text_data.strip().startswith("{") else {"text": text_data}
+            text = req_data.get("text", "")
+            if not text:
+                continue
+
+            voice = req_data.get("voice", "Shivani")
+            lang = req_data.get("language", "hi-IN")
+            payload = {
+                "text": text,
+                "voice": voice,
+                "model": "timbre-v3.0",
+                "language": lang,
+                "speed": 1.0,
+                "audio_config": {
+                    "sample_rate": 48000,
+                    "num_channels": 1,
+                    "sample_width": 2,
+                    "encoding": "linear_pcm",
+                    "container": "wav",
+                },
+            }
+            async with websockets.connect(tts_url, extra_headers=headers) as gnani_ws:
+                await gnani_ws.send(json.dumps(payload))
+                async for chunk in gnani_ws:
+                    await client_ws.send_text(chunk if isinstance(chunk, str) else chunk.decode("utf-8", errors="ignore"))
+    except Exception as e:
+        logger.warning(f"Gnani TTS session finished: {e}")
+
+@app.get("/api/sync/pull")
+async def sync_pull():
+    return {"customers": get_all_customers(), "transactions": get_all_transactions(), "timestamp": 0}
+
+@app.post("/api/sync/push")
+async def sync_push(req: Request):
+    return {"status": "ok", "synced": True}
 
 @app.get("/api/customers")
 async def api_customers():
