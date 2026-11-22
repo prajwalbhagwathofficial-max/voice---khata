@@ -775,3 +775,134 @@ async def test_udhar_3000_then_returned_2998_multilingual(tmp_path: Path) -> Non
     assert bal2 == 200  # 200 paise = 2 INR
     assert any("The remaining payable amount is 2 rupees" in s for s in tts2.spoken_texts)
 
+
+@pytest.mark.asyncio
+async def test_balance_query_credit_payment_breakdown_all_languages(tmp_path: Path):
+    """Test that querying balance breaks down credit taken, payment made, and net owed."""
+    from server.session import UnifiedSessionOrchestrator as Session
+    from server.speech.mocks import MockSTT, MockTTS
+    from voice_khata.models import LanguageCode
+
+    class CapturingTTS(MockTTS):
+        def __init__(self):
+            super().__init__()
+            self.spoken_texts: list[str] = []
+
+        async def synthesize(self, text: str):
+            self.spoken_texts.append(text)
+            async for chunk in super().synthesize(text):
+                yield chunk
+
+    class DummyWS:
+        def __init__(self):
+            self.sent_texts: list[str] = []
+            self.sent_bytes: list[bytes] = []
+
+        async def send_text(self, t: str) -> None:
+            self.sent_texts.append(t)
+
+        async def send_bytes(self, b: bytes) -> None:
+            self.sent_bytes.append(b)
+
+    db_file = tmp_path / "breakdown.db"
+    ledger = Ledger(db_file, enc_key="0" * 64)
+    ws = DummyWS()
+    tts = CapturingTTS()
+    session = Session(
+        transport=ws,
+        ledger=ledger,
+        nlu=None,
+        stt=MockSTT(),
+        tts=tts,
+        initial_lang=LanguageCode.EN_IN,
+    )
+
+    async def stream():
+        yield json.dumps({"t": "session.start", "lang": "en"})
+        await asyncio.sleep(0.05)
+        # 1. Udhaar of 3000
+        yield json.dumps({"t": "inject_text", "text": "Sunil 3000 udhaar", "mode": "gave"})
+        await asyncio.sleep(0.15)
+        # 2. Returned 2998
+        yield json.dumps({"t": "inject_text", "text": "Sunil returned 2998", "mode": "gave"})
+        await asyncio.sleep(0.15)
+        # 3. Query: "how many money should Sunil owe"
+        yield json.dumps({"t": "inject_text", "text": "how many money should Sunil owe"})
+        await asyncio.sleep(0.15)
+
+    await session.run(stream())
+
+    # Check Sunil's totals
+    cust = (await ledger.customers_matching("Sunil"))[0]
+    credit_p, payment_p, bal_p = await ledger.customer_totals(cust.id)
+    assert credit_p == 300000
+    assert payment_p == 299800
+    assert bal_p == 200
+
+    # Spoken breakdown in English
+    spoken = " ".join(tts.spoken_texts)
+    assert "took a total of 3000 rupees credit" in spoken
+    assert "paid 2998 rupees" in spoken
+    assert "owes 2 rupees to the shopkeeper" in spoken
+
+
+@pytest.mark.asyncio
+async def test_you_got_mode_hint_saves_only_as_payment_received(tmp_path: Path):
+    """Test that in the 'You Got' section, quick entries save as PAYMENT_RECEIVED (credited to customer) and never udhaar."""
+    from server.session import UnifiedSessionOrchestrator as Session
+    from server.speech.mocks import MockSTT, MockTTS
+    from voice_khata.models import LanguageCode
+
+    class CapturingTTS(MockTTS):
+        def __init__(self):
+            super().__init__()
+            self.spoken_texts: list[str] = []
+
+        async def synthesize(self, text: str):
+            self.spoken_texts.append(text)
+            async for chunk in super().synthesize(text):
+                yield chunk
+
+    class DummyWS:
+        def __init__(self):
+            self.sent_texts: list[str] = []
+            self.sent_bytes: list[bytes] = []
+
+        async def send_text(self, t: str) -> None:
+            self.sent_texts.append(t)
+
+        async def send_bytes(self, b: bytes) -> None:
+            self.sent_bytes.append(b)
+
+    db_file = tmp_path / "you_got.db"
+    ledger = Ledger(db_file, enc_key="0" * 64)
+    ws = DummyWS()
+    tts = CapturingTTS()
+    session = Session(
+        transport=ws,
+        ledger=ledger,
+        nlu=None,
+        stt=MockSTT(),
+        tts=tts,
+        initial_lang=LanguageCode.EN_IN,
+    )
+
+    async def stream():
+        yield json.dumps({"t": "session.start", "lang": "en"})
+        await asyncio.sleep(0.05)
+        # Entry in "You Got" tab with mode: "got"
+        yield json.dumps({"t": "inject_text", "text": "Kavita 500", "mode": "got"})
+        await asyncio.sleep(0.15)
+
+    await session.run(stream())
+
+    # Verify Kavita was created and entry was PAYMENT_RECEIVED, NOT CREDIT_GIVEN
+    custs = await ledger.customers_matching("Kavita")
+    assert len(custs) == 1
+    events = await ledger.recent_events(limit=10)
+    assert len(events) == 1
+    assert events[0]["type"] == "PAYMENT_RECEIVED"
+    assert events[0]["amount_inr"] == 500
+    assert events[0]["customer_name"] == "Kavita"
+
+

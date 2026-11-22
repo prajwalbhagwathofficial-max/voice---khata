@@ -1590,6 +1590,44 @@ class Ledger:
         cid = customer.id if isinstance(customer, CustomerRecord) else str(customer)
         return await asyncio.to_thread(self._balance_sync, cid)
 
+    def _customer_totals_sync(self, customer_id: str) -> tuple[int, int, int]:
+        """Compute (total_credit_paise, total_payment_paise, net_balance_paise) for a customer."""
+        conn = self._connect()
+        try:
+            exists = conn.execute(
+                "SELECT 1 FROM customers WHERE id = ?", (customer_id,)
+            ).fetchone()
+            if exists is None:
+                raise LedgerNotFoundError(f"Customer {customer_id!r} not found")
+
+            row = conn.execute(
+                """
+                SELECT
+                    COALESCE(SUM(CASE WHEN e.type IN ('CREDIT_GIVEN', 'CREDIT') THEN e.amount_paise ELSE 0 END), 0) AS credit_paise,
+                    COALESCE(SUM(CASE WHEN e.type IN ('PAYMENT_RECEIVED', 'PAYMENT') THEN e.amount_paise ELSE 0 END), 0) AS payment_paise
+                FROM events e
+                WHERE e.customer_id = ?
+                  AND e.type NOT IN ('REVERSAL', 'VOID')
+                  AND NOT EXISTS (
+                      SELECT 1 FROM events r
+                      WHERE r.type IN ('REVERSAL', 'VOID')
+                        AND r.reverses_event_id = e.event_id
+                  )
+                """,
+                (customer_id,),
+            ).fetchone()
+            credit_paise = int(row["credit_paise"]) if row is not None else 0
+            payment_paise = int(row["payment_paise"]) if row is not None else 0
+            net_balance = credit_paise - payment_paise
+            return credit_paise, payment_paise, net_balance
+        finally:
+            conn.close()
+
+    async def customer_totals(self, customer: str | CustomerRecord) -> tuple[int, int, int]:
+        """Return (total_credit_paise, total_payment_paise, net_balance_paise)."""
+        cid = customer.id if isinstance(customer, CustomerRecord) else str(customer)
+        return await asyncio.to_thread(self._customer_totals_sync, cid)
+
     def _balances_all_sync(self) -> list[CustomerBalanceRecord]:
         conn = self._connect()
         try:

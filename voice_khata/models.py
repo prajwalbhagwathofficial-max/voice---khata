@@ -189,6 +189,8 @@ class CustomerBalance(BaseModel):
     customer_name: str
     balance_rupees: int
     event_count: int
+    total_credit_rupees: int = 0
+    total_payment_rupees: int = 0
 
     @field_validator("balance_rupees", mode="before")
     @classmethod

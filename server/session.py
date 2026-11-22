@@ -1386,17 +1386,23 @@ class UnifiedSessionOrchestrator:
         stop = {
             "wrong", "entry", "cancel", "undo", "void", "last", "nahi", "please",
             "add", "record", "credit", "payment", "paid", "total", "balance", "kul",
-            "baaki", "kitna", "hai", "ke", "ka", "ki", "ne", "ko", "udhaar", "jama",
+            "baaki", "kitna", "kitne", "hai", "ke", "ka", "ki", "ne", "ko", "udhaar", "jama",
             "for", "to", "from", "of", "with",
+            "how", "many", "much", "money", "should", "does", "did", "what", "is", "are", "owe", "owes", "due", "pay", "give", "tell", "show", "check",
             "returned", "return", "returns", "repay", "repaid", "wapas", "waapas",
             "he", "she", "him", "her", "they", "them", "his", "hers", "it",
             "usne", "unhone", "uska", "unka", "usse", "unse",
             "उसने", "उन्होंने", "उसका", "उनकी", "उनके",
             "वापस", "दिए", "दिया", "लौटाया", "चुकाया", "जमा", "उधार", "रुपये", "पैसे", "को", "ने", "से", "का", "की", "के", "में", "लिखो", "लिख",
+            "कितने", "देना", "देने", "बताओ", "दिखाओ", "हिसाब",
             "avaru", "avanu", "avalu", "ಅವರು", "ಅವನು", "ಅವಳು",
             "ಕೊಟ್ಟರು", "ಕೊಟ್ಟೆ", "ಬರೆ", "ರೂಪಾಯಿ", "ಜಮಾ", "ಉದ್ರಿ", "ಗೆ", "ನಿಂದ",
+            "eshtu", "hana", "duddu", "kodabeku", "heli", "torisi",
+            "ಎಷ್ಟು", "ಕೊಡಬೇಕು", "ಹೇಳಿ", "ತೋರಿಸಿ", "ಲೆಕ್ಕ",
             "atanu", "aame", "అతను", "ఆమె",
             "ఇచ్చారు", "ఇచ్చాను", "రూపాయలు", "జమ", "అప్పు", "కి", "నుండి",
+            "entha", "dabbu", "ivvali", "cheppandi", "chupandi",
+            "ఎంత", "ఇవ్వాలి", "చెప్పండి", "చూపండి",
         }
         cand_name: str | None = None
         for idx, w in enumerate(words):
@@ -1440,7 +1446,15 @@ class UnifiedSessionOrchestrator:
             )
         if any(k in lower for k in ("kul", "total", "summary", "कुल", "ಒಟ್ಟು")):
             return ParsedIntent(intent=IntentType.QUERY_TOTAL, language_code=lang)
-        if any(k in lower for k in ("baaki", "balance", "kitna", "बाकी", "बैलेंस", "ಬಾಕಿ")):
+        balance_indicators = (
+            "baaki", "balance", "kitna", "kitne", "hisaab", "hisab",
+            "owe", "owes", "due", "kodabeku", "ivvali", "dena", "banta",
+            "how much", "how many",
+            "बाकी", "बैलेंस", "हिसाब", "देना",
+            "ಬಾಕಿ", "ಬ್ಯಾಲೆನ್ಸ್", "ಲೆಕ್ಕ", "ಕೊಡಬೇಕು",
+            "బాకీ", "బ్యాలెన్స్", "ఇవ్వాలి",
+        )
+        if any(k in lower for k in balance_indicators) and det_amount is None:
             return ParsedIntent(
                 intent=IntentType.QUERY_BALANCE, customer_name=cand_name, language_code=lang
             )
@@ -1885,13 +1899,15 @@ class UnifiedSessionOrchestrator:
                             )
                         else:
                             cust = matches[0]
-                            bal = await self._ledger.balance(cust.id)
+                            credit_p, payment_p, bal = await self._ledger.customer_totals(cust.id)
                             self._last_active_customer = cust
                             latency.mark("db_end", op="query_balance")
                             bal_model = CustomerBalance(
                                 customer_id=0,
                                 customer_name=cust.name,
                                 balance_rupees=bal // 100,
+                                total_credit_rupees=credit_p // 100,
+                                total_payment_rupees=payment_p // 100,
                                 event_count=1,
                             )
                             response_text = templates.render_customer_balance(lang, bal_model)

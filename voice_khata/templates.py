@@ -227,20 +227,95 @@ def render_action_cancelled(lang: LanguageCode) -> str:
 
 
 def render_customer_balance(lang: LanguageCode, balance: CustomerBalance) -> str:
-    bal_phrase = _format_balance_phrase(lang, balance.balance_rupees)
+    took = getattr(balance, "total_credit_rupees", 0)
+    paid = getattr(balance, "total_payment_rupees", 0)
+    owed = balance.balance_rupees
+
     if lang == LanguageCode.HI_IN:
-        return (
-            f"{balance.customer_name} के खाते में अभी {bal_phrase}, "
-            f"कुल {balance.event_count} प्रविष्टियाँ दर्ज हैं।"
-        )
+        if owed > 0:
+            if paid > 0:
+                return (
+                    f"{balance.customer_name} ने कुल {took} रुपये का उधार लिया और {paid} रुपये जमा किए। "
+                    f"जमा घटाकर, अब {balance.customer_name} को दुकानदार को {owed} रुपये देने हैं।"
+                )
+            return (
+                f"{balance.customer_name} ने कुल {took or owed} रुपये का उधार लिया है। "
+                f"अब {balance.customer_name} पर दुकानदार के {owed} रुपये बाकी हैं।"
+            )
+        elif owed < 0:
+            advance = abs(owed)
+            return (
+                f"{balance.customer_name} ने {took} रुपये का सामान लिया और {paid} रुपये जमा किए। "
+                f"{balance.customer_name} के {advance} रुपये एडवांस जमा हैं।"
+            )
+        else:
+            return (
+                f"{balance.customer_name} का पूरा हिसाब चुकता है। "
+                f"कुल {took} रुपये उधार और {paid} रुपये जमा के बाद 0 रुपये बाकी हैं।"
+            )
+
     if lang == LanguageCode.KN_IN:
+        if owed > 0:
+            if paid > 0:
+                return (
+                    f"{balance.customer_name} ಅವರು ಒಟ್ಟು {took} ರೂಪಾಯಿ ಉದ್ರಿ ಪಡೆದು, {paid} ರೂಪಾಯಿ ಪಾವತಿಸಿದ್ದಾರೆ. "
+                    f"ಪಾವತಿಯನ್ನು ಕಳೆದ ನಂತರ, {balance.customer_name} ಅವರು ಅಂಗಡಿಯವರಿಗೆ {owed} ರೂಪಾಯಿ ಬಾಕಿ ಕೊಡಬೇಕು."
+                )
+            return (
+                f"{balance.customer_name} ಅವರು ಒಟ್ಟು {took or owed} ರೂಪಾಯಿ ಉದ್ರಿ ಪಡೆದಿದ್ದಾರೆ. "
+                f"{balance.customer_name} ಅವರು ಅಂಗಡಿಯವರಿಗೆ {owed} ರೂಪಾಯಿ ಬಾಕಿ ಕೊಡಬೇಕು."
+            )
+        elif owed < 0:
+            advance = abs(owed)
+            return (
+                f"{balance.customer_name} ಅವರ {advance} ರೂಪಾಯಿ ಮುಂಗಡ ಜಮಾ ಇದೆ."
+            )
+        else:
+            return (
+                f"{balance.customer_name} ಅವರ ಸಂಪೂರ್ಣ ಲೆಕ್ಕ ಚುಕ್ತಾ ಆಗಿದೆ. 0 ರೂಪಾಯಿ ಬಾಕಿ."
+            )
+
+    if lang == LanguageCode.TE_IN:
+        if owed > 0:
+            if paid > 0:
+                return (
+                    f"{balance.customer_name} మొత్తం {took} రూపాయలు అప్పు తీసుకున్నారు మరియు {paid} రూపాయలు చెల్లించారు. "
+                    f"చెల్లింపును తీసివేస్తే, {balance.customer_name} దుకాణదారునికి {owed} రూపాయలు బాకీ ఇవ్వాలి."
+                )
+            return (
+                f"{balance.customer_name} మొత్తం {took or owed} రూపాయలు అప్పు తీసుకున్నారు. "
+                f"{balance.customer_name} దుకాణదారునికి {owed} రూపాయలు బాకీ ఇవ్వాలి."
+            )
+        elif owed < 0:
+            advance = abs(owed)
+            return (
+                f"{balance.customer_name} కు {advance} రూపాయల అడ్వాన్స్ జమ ఉంది."
+            )
+        else:
+            return (
+                f"{balance.customer_name} లెక్క పూర్తయింది. 0 రూపాయలు బాకీ."
+            )
+
+    # Default: English
+    if owed > 0:
+        if paid > 0:
+            return (
+                f"{balance.customer_name} took a total of {took} rupees credit and paid {paid} rupees. "
+                f"Deducting the payment, {balance.customer_name} owes {owed} rupees to the shopkeeper."
+            )
         return (
-            f"{balance.customer_name} ಅವರ ಖಾತೆಯಲ್ಲಿ ಈಗ {bal_phrase}, "
-            f"ಒಟ್ಟು {balance.event_count} ದಾಖಲೆಗಳಿವೆ."
+            f"{balance.customer_name} took a total of {took or owed} rupees credit. "
+            f"{balance.customer_name} owes {owed} rupees to the shopkeeper."
+        )
+    elif owed < 0:
+        advance = abs(owed)
+        return (
+            f"{balance.customer_name} took {took} rupees credit and paid {paid} rupees. "
+            f"{balance.customer_name} has {advance} rupees advance balance with the shop."
         )
     return (
-        f"{balance.customer_name}'s ledger shows {bal_phrase} "
-        f"across {balance.event_count} recorded entries."
+        f"{balance.customer_name} took {took} rupees credit and paid back {paid} rupees. "
+        "The account is fully settled at 0 rupees owed."
     )
 
 

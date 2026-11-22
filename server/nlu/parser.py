@@ -149,12 +149,15 @@ _CORRECTION_PREFIX_RE = re.compile(
 _BALANCE_QUERY_RE = re.compile(
     rf"""(?xi)
     {_LB}(?:
-        balance|hisaab|hisab|baaki\s+kitna|kitna\s+baaki|kitna\s+dena|kitna\s+banta|kitna\s+hai
-        |how\s+much.*owe|what\s+is.*balance|how\s+much.*due
-        |baaki\s+entha|balance\s+entha|lekkalu
-        |baaki\s+eshtu|balance\s+eshtu
-        |हिसाब|बैलेंस|बाकी\s+कितना|कितना\s+बाकी|कितना\s+देना
-        |బాకీ\s+ఎంత|బ్యాలెన్స్\s+ఎంత|బాకీ|ಲೆಕ್ಕ|ಬಾಕಿ\s+ಎಷ್ಟು|ಬ್ಯಾಲೆನ್ಸ್\s+ಎಷ್ಟು|ಬಾಕಿ
+        balance|hisaab|hisab|baaki\s+kitna|kitna\s+baaki|kitna\s+dena|kitne\s+paise\s+dena|kitne\s+paise|kitna\s+banta|kitna\s+hai
+        |how\s+(?:much|many)(?:\s+money)?.*?(?:owe|owes|due|pay|give|pending|banta|left)
+        |how\s+(?:much|many)(?:\s+money)?\s+(?:should|does|did)
+        |what\s+is.*(?:balance|due|pending|hisaab|account)
+        |baaki\s+entha|balance\s+entha|entha\s+(?:dabbu\s+)?ivvali|lekkalu
+        |baaki\s+eshtu|balance\s+eshtu|eshtu\s+(?:duddu\s+|hana\s+)?kodabeku
+        |हिसाब|बैलेंस|बाकी\s+कितना|कितना\s+बाकी|कितना\s+देना|कितने\s+पैसे\s+देने|कितने\s+पैसे
+        |బాకీ\s+ఎంత|బ్యాలెన్స్\s+ఎంత|ఎంత\s+ఇవ్వాలి|బాకీ|లెక్క
+        |ಬಾಕಿ\s+ಎಷ್ಟು|ಬ್ಯಾಲೆನ್ಸ್\s+ಎಷ್ಟು|ಎಷ್ಟು\s+ಕೊಡಬೇಕು|ಬಾಕಿ|ಲೆಕ್ಕ
     ){_RB}
     """
 )
@@ -328,15 +331,15 @@ def _extract_customer_name(
 
     # 2. Heuristic extraction of capitalized name or Indic entity
     # Common post-position markers in Hindi/English/Telugu/Kannada
-    # e.g. "Ramesh ke khate", "Ramesh ko", "Ramesh ne", "for Suresh", "Ramesh ki", "Ramesh ge"
+    # e.g. "Ramesh ke khate", "Ramesh ko", "Ramesh ne", "for Suresh", "should Ramesh owe", "Ramesh ge"
     m = re.search(
         r"""(?xi)
-        \b(?:for|to|from)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)
-        | ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:ke|ko|ne|se|ka|ki|nundi|nunchi|ki|ku|ge)\b
+        \b(?:for|to|from|should|does|did)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)
+        | ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:ke|ko|ne|se|ka|ki|nundi|nunchi|ki|ku|ge|owe|owes|pay|due|has|have|kodabeku|ivvali)\b
         | ([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:\d+|teen|two|three|do|రెండు|ಎರಡು|udhaar|jama|paid|returned|repaid|wapas)
-        | ([\u0900-\u097F]+)\s+(?:के|को|ने|से|का|की)\b
-        | ([\u0C00-\u0C7F]+)\s*(?:కి|కు|నుండి)\b
-        | ([\u0C80-\u0CFF]+)\s*(?:ಗೆ|ನಿಂದ)\b
+        | ([\u0900-\u097F]+)\s+(?:के|को|ने|से|का|की|देना)\b
+        | ([\u0C00-\u0C7F]+)\s*(?:కి|కు|నుండి|ఇవ్వాలి)\b
+        | ([\u0C80-\u0CFF]+)\s*(?:ಗೆ|ನಿಂದ|ಕೊಡಬೇಕು)\b
         """,
         norm,
     )
@@ -347,20 +350,22 @@ def _extract_customer_name(
                 # Exclude day names or keywords or pronouns
                 if cand.casefold() not in (
                     "today", "yesterday", "tomorrow", "kal", "aaj", "parso", "monna", "ninna",
-                    "he", "she", "him", "her", "they", "them", "his", "it", "usne", "unhone", "uska", "unka", "avaru", "atanu"
+                    "he", "she", "him", "her", "they", "them", "his", "it", "usne", "unhone", "uska", "unka", "avaru", "atanu",
+                    "how", "many", "much", "money", "should", "does", "did", "owe", "owes", "due", "pay"
                 ):
                     return cand, None
 
-    # Fallback: check first word if capitalized and not a command word or pronoun
+    # Fallback: check any word in the utterance if capitalized and not a command word/pronoun
+    query_stop_words = {
+        "please", "add", "record", "note", "check", "what", "how", "today", "yesterday", "tomorrow", "undo",
+        "he", "she", "him", "her", "they", "them", "his", "it", "usne", "unhone", "uska", "unka", "avaru", "atanu",
+        "many", "much", "money", "should", "does", "did", "owe", "owes", "due", "pay", "give", "total", "balance"
+    }
     words = norm.split()
-    if words:
-        first = words[0].strip(",.:")
-        if first and first[0].isupper() and first.isalpha():
-            if first.casefold() not in (
-                "please", "add", "record", "note", "check", "what", "how", "today", "yesterday", "tomorrow", "undo",
-                "he", "she", "him", "her", "they", "them", "his", "it", "usne", "unhone", "uska", "unka", "avaru", "atanu"
-            ):
-                return first, None
+    for w in words:
+        clean = w.strip(",.:;!?")
+        if clean and clean[0].isupper() and clean.isalpha() and clean.casefold() not in query_stop_words:
+            return clean, None
 
     return None, None
 

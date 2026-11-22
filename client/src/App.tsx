@@ -570,6 +570,21 @@ export function App() {
                   question: msg.question,
                 };
             setParsedAction(payload);
+            if ((msg.type === "PAYMENT_RECEIVED" || msg.type === "PAYMENT") && msg.event_id) {
+              const newPayment: PaymentItem = {
+                seq: Date.now(),
+                event_id: msg.event_id,
+                customer_id: msg.customer_id || "",
+                customer_name: msg.customer || msg.customer_name || "Customer",
+                amount_paise: amtPaise,
+                amount_inr: amtInr,
+                effective_date: msg.effective_date || new Date().toISOString().slice(0, 10),
+                ts: String(Date.now()),
+                formatted_time: "Just now",
+                note: msg.note,
+              };
+              setPayments((prev) => [newPayment, ...prev.filter((p) => p.event_id !== msg.event_id)]);
+            }
             break;
           }
 
@@ -591,6 +606,45 @@ export function App() {
           case "snapshot": {
             if (msg.customers) {
               setLedgerRows(normalizeAndSortLedger(msg.customers));
+            }
+            if (msg.recent_events && Array.isArray(msg.recent_events)) {
+              const snapPayments: PaymentItem[] = [];
+              const snapCredits: CreditItem[] = [];
+              for (const ev of msg.recent_events as any[]) {
+                if (ev.type === "PAYMENT_RECEIVED" || ev.type === "PAYMENT") {
+                  snapPayments.push({
+                    seq: ev.seq,
+                    event_id: ev.event_id,
+                    customer_id: ev.customer_id,
+                    customer_name: ev.customer_name,
+                    amount_paise: ev.amount_paise,
+                    amount_inr: ev.amount_inr,
+                    effective_date: ev.effective_date,
+                    ts: String(ev.ts),
+                    formatted_time: ev.ist_time || "",
+                    note: ev.note,
+                  });
+                } else if (ev.type === "CREDIT_GIVEN" || ev.type === "CREDIT") {
+                  snapCredits.push({
+                    seq: ev.seq,
+                    event_id: ev.event_id,
+                    customer_id: ev.customer_id,
+                    customer_name: ev.customer_name,
+                    amount_paise: ev.amount_paise,
+                    amount_inr: ev.amount_inr,
+                    effective_date: ev.effective_date,
+                    ts: String(ev.ts),
+                    formatted_time: ev.ist_time || "",
+                    note: ev.note,
+                    items: ev.items,
+                    bills: ev.bills,
+                    has_bill: ev.has_bill,
+                    item_count: ev.item_count,
+                  });
+                }
+              }
+              if (snapPayments.length > 0) setPayments(snapPayments);
+              if (snapCredits.length > 0) setCredits(snapCredits);
             }
             if (msg.summary) {
               const s = msg.summary as any;
@@ -838,9 +892,12 @@ export function App() {
     setPartialTranscript("");
     pttStreamingRef.current = true;
     audio.setCaptureActive(true);
-    sendJson({ t: "ptt.down" });
+    sendJson({
+      t: "ptt.down",
+      mode: viewMode === "you_got" ? "got" : "gave",
+    });
     updatePttState("LISTENING");
-  }, [sendJson, updatePttState]);
+  }, [sendJson, updatePttState, viewMode]);
 
   const stopRecording = useCallback(() => {
     if (!pttStreamingRef.current && pttStateRef.current !== "LISTENING") {
@@ -957,7 +1014,7 @@ export function App() {
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!textEntryInput.trim()) return;
-      sendJson({ t: "inject_text", text: textEntryInput.trim() });
+      sendJson({ t: "inject_text", text: textEntryInput.trim(), mode: "gave" });
       setTextEntryInput("");
     },
     [textEntryInput, sendJson]
@@ -967,7 +1024,7 @@ export function App() {
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!gotTextEntryInput.trim()) return;
-      sendJson({ t: "inject_text", text: gotTextEntryInput.trim() });
+      sendJson({ t: "inject_text", text: gotTextEntryInput.trim(), mode: "got" });
       setGotTextEntryInput("");
     },
     [gotTextEntryInput, sendJson]
@@ -2864,7 +2921,7 @@ export function App() {
                 <input
                   type="text"
                   className="quick-text-input"
-                  placeholder="⊕ Record received credit here: e.g. Ramesh 200 credit / Suresh 500 jama..."
+                  placeholder="⊕ Record payment received: e.g. Ramesh 200 / Suresh 500 jama..."
                   value={gotTextEntryInput}
                   onChange={(e) => setGotTextEntryInput(e.target.value)}
                 />
@@ -2873,7 +2930,7 @@ export function App() {
                   className="quick-text-btn btn-green btn-save-credit"
                   disabled={!gotTextEntryInput.trim()}
                 >
-                  + Save Received Credit ↵
+                  + Save Payment Received ↵
                 </button>
               </form>
             </div>
